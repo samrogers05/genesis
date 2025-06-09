@@ -263,10 +263,15 @@ export default function Home() {
   const featuredLabs = mockLabs.filter((lab) => lab.featured);
 
   const handleSignalBoost = (index: number) => {
-    if (dailyBoosts > 0 && !boostedItems.has(index)) {
-      setDailyBoosts(prev => prev - 1);
-      setBoostedItems(prev => new Set([...prev, index]));
-    }
+    setBoostedItems(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(index)) {
+        newSet.delete(index);
+      } else {
+        newSet.add(index);
+      }
+      return newSet;
+    });
   };
 
   return (
@@ -441,7 +446,8 @@ export default function Home() {
                   </svg>
                 </div>
                 <svg
-                  className="absolute bottom-2 right-2 w-6 h-6 opacity-60 text-gray-600 group-hover:text-yellow-600 group-hover:opacity-80 transition-all duration-300"
+                  onClick={() => handleSignalBoost(i)}
+                  className={`absolute bottom-2 right-2 w-6 h-6 cursor-pointer transition-colors duration-300 ${boostedItems.has(i) ? 'text-yellow-400 opacity-80' : 'text-gray-600 opacity-60'} group-hover:text-yellow-600 group-hover:opacity-80`}
                   fill="currentColor"
                   viewBox="0 0 24 24"
                 >
