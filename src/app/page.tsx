@@ -285,7 +285,14 @@ export default function Home() {
             className="w-full text-sm border-2 border-gray-300 bg-white px-4 py-2 rounded-lg font-sans focus:border-blue-500 focus:outline-none transition-colors duration-200 shadow-sm"
           />
         </div>
-        <div></div>
+        <div className="flex items-center gap-4">
+          <Link
+            href="/about"
+            className="text-sm font-medium hover:text-gray-600 transition-colors duration-200"
+          >
+            About
+          </Link>
+        </div>
       </header>
 
       {/* Always render Explore View */}
