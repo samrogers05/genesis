@@ -1,136 +1,82 @@
 "use client";
 
 // Import necessary dependencies for the home page
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Home as HomeIcon, Search, User } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { supabase } from "@/lib/supabase";
+import { getTagColor, getTagHoverColor, initializeTagColors } from "@/lib/tags";
 
 // Mock data for research labs - contains information about various research laboratories
 // Each lab object includes name, category, summary, tags, location, and featured status
-const mockLabs = [
-  {
-    name: "NeuroMod Lab",
-    category: "Neuroscience + AI",
-    summary: "Rewiring neural pathways through brain-computer interfaces.",
-    tags: ["Cognition", "Signal Decoding"],
-    location: "California",
-    featured: true,
-  },
-  {
-    name: "SynBio Forge",
-    category: "Synthetic Biology",
-    summary: "Building programmable cells to sense and respond to disease.",
-    tags: ["CRISPR", "Metabolic Engineering"],
-    location: "Massachusetts",
-    featured: true,
-  },
-  {
-    name: "QuantumCore",
-    category: "Quantum Materials",
-    summary: "Stabilizing quantum dots for practical photonic applications.",
-    tags: ["Photonics", "Nanofabrication"],
-    location: "New York",
-    featured: false,
-  },
-  {
-    name: "EcoGene Systems",
-    category: "Environmental Genomics",
-    summary: "Tracking biodiversity through DNA shed in ecosystems.",
-    tags: ["Metagenomics", "Climate Tracking"],
-    location: "Oregon",
-    featured: false,
-  },
-  {
-    name: "MetaCell Studio",
-    category: "Cellular Modeling",
-    summary: "Modeling emergent behavior in organoid development.",
-    tags: ["Organoids", "AI Simulation"],
-    location: "Texas",
-    featured: true,
-  },
-  {
-    name: "CryoPreserve Labs",
-    category: "Cryobiology",
-    summary: "Advancing cellular preservation techniques for regenerative medicine.",
-    tags: ["Cryogenics", "Cell Therapy"],
-    location: "Colorado",
-    featured: false,
-  },
-  {
-    name: "Photonic Dynamics",
-    category: "Optics + Physics",
-    summary: "Developing ultra-fast laser systems for precision manufacturing.",
-    tags: ["Laser Tech", "Precision Engineering"],
-    location: "Arizona",
-    featured: true,
-  },
-  {
-    name: "BioCompute Institute",
-    category: "Computational Biology",
-    summary: "Creating AI models to predict protein folding and drug interactions.",
-    tags: ["Machine Learning", "Drug Discovery"],
-    location: "Washington",
-    featured: false,
-  },
-  {
-    name: "Neural Interface Co.",
-    category: "Bioengineering",
-    summary: "Pioneering implantable devices for treating neurological disorders.",
-    tags: ["Implants", "Neural Stimulation"],
-    location: "Minnesota",
-    featured: false,
-  },
-  {
-    name: "Fusion Dynamics",
-    category: "Energy Physics",
-    summary: "Developing compact fusion reactors for clean energy generation.",
-    tags: ["Fusion", "Clean Energy"],
-    location: "Nevada",
-    featured: true,
-  },
-  {
-    name: "Genome Insights",
-    category: "Genomics",
-    summary: "Mapping rare genetic variants linked to complex diseases.",
-    tags: ["Sequencing", "Disease Genetics"],
-    location: "Maryland",
-    featured: false,
-  },
-  {
-    name: "Nanobot Therapeutics",
-    category: "Nanotechnology",
-    summary: "Engineering microscopic robots for targeted cancer treatment.",
-    tags: ["Nanobots", "Cancer Therapy"],
-    location: "North Carolina",
-    featured: false,
-  },
-  {
-    name: "Climate Modeling Hub",
-    category: "Climate Science",
-    summary: "Predicting climate patterns using advanced atmospheric models.",
-    tags: ["Climate Data", "Atmospheric Science"],
-    location: "Colorado",
-    featured: false,
-  },
-  {
-    name: "Bionic Prosthetics",
-    category: "Biomedical Engineering",
-    summary: "Creating mind-controlled prosthetics with sensory feedback.",
-    tags: ["Prosthetics", "Neural Control"],
-    location: "Illinois",
-    featured: true,
-  },
-  {
-    name: "Space Materials Lab",
-    category: "Aerospace Engineering",
-    summary: "Developing ultra-lightweight materials for space exploration.",
-    tags: ["Aerospace", "Advanced Materials"],
-    location: "Florida",
-    featured: false,
-  },
-];
+
+async function getProjects(tagFilter: string, locationFilter: string, searchTerm: string) {
+  try {
+    let query = supabase
+      .from('Project')
+      .select(`
+        *,
+        projectTags ( 
+          tagId,
+          Tags ( 
+            name
+          )
+        )
+      `)
+      .order('createdAt', { ascending: false });
+
+    if (tagFilter) {
+      // Step 1: Get the tagId for the given tagFilter name
+      const { data: tagNameData, error: tagNameError } = await supabase
+        .from('Tags')
+        .select('id')
+        .eq('name', tagFilter)
+        .single();
+
+      if (tagNameError || !tagNameData) {
+        console.error('Error fetching tag ID:', tagNameError);
+        return [];
+      }
+      const tagId = tagNameData.id;
+
+      // Step 2: Get projectIds from projectTags that have the fetched tagId
+      const { data: projectTagLinks, error: projectTagLinksError } = await supabase
+        .from('projectTags')
+        .select('projectId')
+        .eq('tagId', tagId);
+
+      if (projectTagLinksError) {
+        console.error('Error fetching project tag links:', projectTagLinksError);
+        return [];
+      }
+
+      const projectIds = projectTagLinks.map(link => link.projectId);
+      query = query.in('id', projectIds);
+    }
+
+    if (locationFilter) {
+      query = query.eq('location', locationFilter);
+    }
+
+    if (searchTerm) {
+      query = query.or(`name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Error fetching projects:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error in getProjects:', error);
+    return [];
+  }
+}
 
 // User updates array - contains recent notifications and updates for the user
 // Each update includes a title, detail, and time of the update
@@ -209,74 +155,50 @@ const recommendedLabs = [
   },
 ];
 
-// List of university images for the carousel display
-// These images are stored in the public/images directory
-const localUniversityImages = [
-  "AdobeStock_1153887602.jpeg",
-  "AdobeStock_1184915332.jpeg",
-  "AdobeStock_419100681.jpeg",
-  "AdobeStock_287463204.jpeg",
-  "AdobeStock_543940840.jpeg",
-  "AdobeStock_300777542.jpeg",
-  "AdobeStock_771204121.jpeg",
-  "AdobeStock_1075392951.jpeg",
-  "AdobeStock_1266303408.jpeg",
-  "AdobeStock_472872852.jpeg",
-  "AdobeStock_397792122.jpeg",
-  "AdobeStock_211207599.jpeg",
-  "AdobeStock_182206858.jpeg",
-  "AdobeStock_233822842.jpeg",
-  "AdobeStock_202559690.jpeg",
-  "AdobeStock_566274790.jpeg",
-  "AdobeStock_652050743.jpeg",
-  "AdobeStock_313579568.jpeg",
-  "AdobeStock_194483383.jpeg",
-  "AdobeStock_194483477.jpeg",
-  "AdobeStock_1022072034.jpeg",
-];
-
-// Color mapping for different research categories
-// Each category has a specific background color for visual distinction in the UI
-const categoryColors: { [key: string]: string } = {
-  "Neuroscience + AI": "bg-blue-50",
-  "Synthetic Biology": "bg-green-50",
-  "Quantum Materials": "bg-purple-50",
-  "Environmental Genomics": "bg-yellow-50",
-  "Cellular Modeling": "bg-red-50",
-  "Cryobiology": "bg-indigo-50",
-  "Optics + Physics": "bg-pink-50",
-  "Computational Biology": "bg-teal-50",
-  "Bioengineering": "bg-cyan-50",
-  "Energy Physics": "bg-orange-50",
-  "Genomics": "bg-lime-50",
-  "Nanotechnology": "bg-emerald-50",
-  "Climate Science": "bg-sky-50",
-  "Biomedical Engineering": "bg-violet-50",
-  "Aerospace Engineering": "bg-fuchsia-50",
-};
-
 // Main Home component - serves as the landing page of the application
 // Displays research labs, trends, and user updates in a modern dashboard layout
 export default function Home() {
   // State management for filters and search functionality
-  const [filter, setFilter] = useState(""); // Filter by research category
+  const [loading, setLoading] = useState(true)
+  const [labs, setLabs] = useState<any[]>([]);
+  const [filter, setFilter] = useState(""); // Filter by tag
   const [locationFilter, setLocationFilter] = useState(""); // Filter by lab location
-  const [search, setSearch] = useState(""); // Search query for labs and content
+  const [search, setSearch] = useState("");
+  const [filteredLabs, setFilteredLabs] = useState<any[]>([]);
+  const [showAllTags, setShowAllTags] = useState(false); // New state for showing all tags
+  const [showAllLocations, setShowAllLocations] = useState(false); // New state for showing all locations
   const [dailyBoosts, setDailyBoosts] = useState(3);
   const [boostedItems, setBoostedItems] = useState(new Set<number>());
   const pathname = usePathname();
+  
+  useEffect(() => {
+    async function fetchInitialData() {
+      const projects = await getProjects("", "", ""); // Fetch all projects initially with empty filters
+      setLabs(projects);
+      setFilteredLabs(projects);
+      // Initialize tag colors with all unique tags from the projects
+      const allUniqueTags = projects.flatMap((lab: any) => (lab.projectTags || []).map((pt: any) => pt.Tags?.name).filter(Boolean));
+      initializeTagColors(allUniqueTags);
+      setLoading(false);
+    }
+    fetchInitialData();
+  }, []);
 
-  const allTags = Array.from(new Set(mockLabs.flatMap((l) => l.tags)));
-  const allLocations = Array.from(new Set(mockLabs.map((l) => l.location)));
-  const filteredLabs = mockLabs.filter(
-    (lab) =>
-      (!filter || lab.tags.includes(filter)) &&
-      (!locationFilter || lab.location === locationFilter) &&
-      (lab.name.toLowerCase().includes(search.toLowerCase()) ||
-        lab.summary.toLowerCase().includes(search.toLowerCase()))
-  );
+  useEffect(() => {
+    async function loadProjects() {
+      const projects = await getProjects(filter, locationFilter, search);
+      setFilteredLabs(projects);
+    }
+    if (!loading) {
+      loadProjects();
+    } 
+  }, [filter, locationFilter, search, loading]);
 
-  const featuredLabs = mockLabs.filter((lab) => lab.featured);
+
+  const allTags = Array.from(new Set(labs.flatMap((lab: any) => 
+    (lab.projectTags || []).map((projectTag: any) => projectTag.Tags?.name).filter(Boolean)
+  )));
+  const allLocations = Array.from(new Set(labs.map((lab: any) => lab.location)));
 
   const handleSignalBoost = (index: number) => {
     setBoostedItems(prev => {
@@ -320,6 +242,8 @@ export default function Home() {
       <>
         <div className="overflow-x-auto px-6 py-4 border-b border-black">
           <div className="flex gap-4 pb-2">
+            {/* Temporarily remove featuredLabs display as 'featured' column does not exist */}
+            {/*
             {featuredLabs.map((lab, i) => (
               <div
                 key={i}
@@ -336,7 +260,6 @@ export default function Home() {
                     <h3 className="text-sm font-bold break-words">{lab.name}</h3>
                   </div>
                 </div>
-                {/* University Placeholder Image */}
                 <Image
                   src={`/images/${localUniversityImages[i % localUniversityImages.length]}`}
                   alt={`Image for ${lab.name}`}
@@ -344,9 +267,13 @@ export default function Home() {
                   height={150}
                   className="w-full h-auto rounded-md mb-2"
                 />
-                <p className="text-xs text-gray-800 line-clamp-2">{lab.summary}</p>
+                <p className="text-xs text-gray-800 line-clamp-2">{lab.description}</p>
+                {lab.location && (
+                  <p className="text-xs text-gray-600 mt-1">Location: {lab.location}</p>
+                )}
               </div>
             ))}
+            */}
           </div>
         </div>
 
@@ -362,7 +289,7 @@ export default function Home() {
               >
                 All
               </button>
-              {allTags.slice(0, 8).map((tag, i) => (
+              {(showAllTags ? allTags : allTags.slice(0, 8)).map((tag: string, i: number) => (
                 <button
                   key={i}
                   onClick={() => setFilter(tag)}
@@ -373,9 +300,18 @@ export default function Home() {
                   {tag}
                 </button>
               ))}
-              {allTags.length > 8 && (
-                <button className="text-xs px-3 py-1 border bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors duration-200">
+              {allTags.length > 8 && !showAllTags && (
+                <button 
+                  onClick={() => setShowAllTags(true)}
+                  className="text-xs px-3 py-1 border bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors duration-200">
                   +{allTags.length - 8} more
+                </button>
+              )}
+              {showAllTags && (
+                <button 
+                  onClick={() => setShowAllTags(false)}
+                  className="text-xs px-3 py-1 border bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors duration-200">
+                  Show Less
                 </button>
               )}
             </div>
@@ -392,7 +328,7 @@ export default function Home() {
               >
                 All States
               </button>
-              {allLocations.slice(0, 8).map((location, i) => (
+              {(showAllLocations ? allLocations : allLocations.slice(0, 8)).map((location: string, i: number) => (
                 <button
                   key={i}
                   onClick={() => setLocationFilter(location)}
@@ -403,9 +339,18 @@ export default function Home() {
                   {location}
                 </button>
               ))}
-              {allLocations.length > 8 && (
-                <button className="text-xs px-3 py-1 border bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors duration-200">
+              {allLocations.length > 8 && !showAllLocations && (
+                <button 
+                  onClick={() => setShowAllLocations(true)}
+                  className="text-xs px-3 py-1 border bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors duration-200">
                   +{allLocations.length - 8} more
+                </button>
+              )}
+              {showAllLocations && (
+                <button 
+                  onClick={() => setShowAllLocations(false)}
+                  className="text-xs px-3 py-1 border bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors duration-200">
+                  Show Less
                 </button>
               )}
             </div>
@@ -435,7 +380,7 @@ export default function Home() {
           {filteredLabs.map((lab, i) => (
             <div
               key={i}
-              className={`border border-gray-200 ${categoryColors[lab.category] || 'bg-gray-50'} rounded-lg overflow-hidden cursor-pointer transform transition-all duration-300 ease-out hover:border-yellow-400 hover:shadow-2xl hover:shadow-yellow-200/50 hover:scale-[1.03] group`}
+              className="border border-gray-200 bg-white rounded-lg overflow-hidden cursor-pointer transform transition-all duration-300 ease-out hover:border-yellow-400 hover:shadow-2xl hover:shadow-yellow-200/50 hover:scale-[1.03] group"
               style={{
                 boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)"
               }}
@@ -448,13 +393,6 @@ export default function Home() {
             >
               {/* University Placeholder Image */}
               <div className="w-full h-32 relative overflow-hidden">
-                <Image
-                  src={`/images/${localUniversityImages[i % localUniversityImages.length]}`}
-                  alt={`Image for ${lab.name}`}
-                  fill
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                  className="object-cover"
-                />
                 <div className="absolute inset-0 bg-gradient-to-br from-transparent to-black/10 group-hover:from-yellow-50/20 group-hover:to-yellow-100/20 transition-all duration-300"></div>
                 <div className="absolute top-4 left-4 w-12 h-12 rounded-full bg-white/90 flex items-center justify-center shadow-md">
                   <svg className="w-7 h-7 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -472,25 +410,20 @@ export default function Home() {
               </div>
               <div className="p-4">
                 <div className="text-sm font-bold mb-1 group-hover:text-gray-900 transition-colors duration-200">{lab.name}</div>
-                <div className="text-xs text-gray-600 mb-2 group-hover:text-gray-700 transition-colors duration-200">{lab.summary}</div>
+                <div className="text-xs text-gray-600 mb-2 group-hover:text-gray-700 transition-colors duration-200">{lab.description}</div>
+                {lab.location && (
+                  <div className="text-xs text-gray-600 mb-2 group-hover:text-gray-700 transition-colors duration-200">Location: {lab.location}</div>
+                )}
                 <div className="flex flex-wrap gap-2 mt-2">
-                  {lab.tags.map((tag, j) => (
-                    <span
-                      key={j}
-                      className={`text-xs border px-2 py-0.5 rounded transition-all duration-200 ${
-                        lab.category.includes('Neuroscience')
-                          ? 'bg-blue-100 text-blue-800 border-blue-200 group-hover:bg-blue-200 group-hover:border-blue-300'
-                          : lab.category.includes('Synthetic Biology')
-                          ? 'bg-green-100 text-green-800 border-green-200 group-hover:bg-green-200 group-hover:border-green-300'
-                          : lab.category.includes('Quantum')
-                          ? 'bg-purple-100 text-purple-800 border-purple-200 group-hover:bg-purple-200 group-hover:border-purple-300'
-                          : lab.category.includes('Environmental')
-                          ? 'bg-yellow-100 text-yellow-800 border-yellow-200 group-hover:bg-yellow-200 group-hover:border-yellow-300'
-                          : 'bg-gray-100 text-gray-800 border-gray-200 group-hover:bg-gray-200 group-hover:border-gray-300'
-                      }`}
-                    >
-                      {tag}
-                    </span>
+                  {(lab.projectTags || []).map((pt: any, j: number) => (
+                    pt.Tags?.name && (
+                      <span
+                        key={j}
+                        className={`text-xs border px-2 py-0.5 rounded transition-all duration-200 ${getTagColor(pt.Tags.name)} group-hover:${getTagHoverColor(pt.Tags.name)}`}
+                      >
+                        {pt.Tags.name}
+                      </span>
+                    )
                   ))}
                 </div>
                 <div className="flex gap-2 mt-3">

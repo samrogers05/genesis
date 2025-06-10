@@ -256,19 +256,7 @@ export default function Profile() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-stone-50 font-serif text-slate-900">
-      <style dangerouslySetInnerHTML={{
-        __html: `
-          @import url('https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600&display=swap');
-          * {
-            font-family: 'Crimson Text', serif;
-          }
-          .sans {
-            font-family: 'Inter', sans-serif;
-          }
-        `
-      }} />
-      
+    <div className="flex flex-col min-h-screen bg-stone-50 text-slate-900">
       <header className="flex items-center justify-between px-8 py-6 border-b-2 border-slate-200 bg-white">
         <div className="flex items-center gap-6">
           <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Genesis</h1>
@@ -290,7 +278,7 @@ export default function Profile() {
       <div className="flex-1 px-8 py-8 space-y-8 pb-32 max-w-4xl mx-auto w-full">
         {/* Profile Header */}
         <section className="bg-white border border-slate-200 shadow-sm overflow-hidden">
-          <div className="h-32 bg-gradient-to-r from-emerald-600 via-teal-600 to-blue-600 relative">
+          <div className="h-32 bg-gradient-to-r from-blue-100 via-indigo-100 to-purple-100 relative">
             <div className="absolute top-4 right-4">
               <button
                 onClick={() => setIsEditing(!isEditing)}
@@ -302,7 +290,7 @@ export default function Profile() {
             </div>
           </div>
           
-          <div className="px-8 py-1 relative">
+          <div className="px-8 py-0.5 relative">
             <div className="flex items-start gap-6 -mt-16">
               <div className="relative">
                 <div className="w-24 h-24 rounded-full bg-slate-200 border-4 border-white shadow-lg flex items-center justify-center overflow-hidden">
@@ -513,7 +501,7 @@ export default function Profile() {
         </section>
       </div>
 
-      <nav className="fixed bottom-0 w-full bg-white border-t border-black flex justify-around py-3 shadow-lg">
+      <nav className="fixed bottom-0 w-full bg-white border-t border-black flex justify-around py-3 shadow-lg sans">
         <Link
           href="/feed"
           className={`flex flex-col items-center transition-colors duration-200 ${pathname === "/feed" ? "text-blue-600" : "text-black hover:text-gray-600"}`}
