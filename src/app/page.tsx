@@ -78,83 +78,6 @@ async function getProjects(tagFilter: string, locationFilter: string, searchTerm
   }
 }
 
-// User updates array - contains recent notifications and updates for the user
-// Each update includes a title, detail, and time of the update
-const userUpdates = [
-  {
-    title: "New results from NeuroMod Lab",
-    detail: "Real-time decoding of motor intentions from EEG.",
-    time: "2h ago",
-  },
-  {
-    title: "SynBio Forge opens internship apps",
-    detail: "Applications now open for summer synthetic biology program.",
-    time: "5h ago",
-  },
-];
-
-// Category trends array - shows trending topics and research areas
-// Each trend includes title, detail, time, number of boosts, and boost status
-const categoryTrends = [
-  {
-    title: "Transformer models predict cell fate",
-    detail: "Large language models now applied to single-cell sequencing.",
-    time: "3h ago",
-    boosts: 127,
-    boosted: false,
-  },
-  {
-    title: "CRISPR base editing breakthrough",
-    detail: "A new enzyme enables reversible epigenetic control in vivo.",
-    time: "7h ago",
-    boosts: 89,
-    boosted: false,
-  },
-  {
-    title: "Room-temperature superconductor claims",
-    detail: "New research challenges previous ambient superconductivity findings.",
-    time: "5h ago",
-    boosts: 203,
-    boosted: true,
-  },
-  {
-    title: "AlphaFold 3 predicts protein interactions",
-    detail: "Enhanced AI model now accurately predicts protein-drug complexes.",
-    time: "8h ago",
-    boosts: 156,
-    boosted: false,
-  },
-  {
-    title: "Quantum error correction milestone",
-    detail: "IBM achieves 99.9% fidelity in quantum error correction protocols.",
-    time: "12h ago",
-    boosts: 94,
-    boosted: false,
-  },
-  {
-    title: "Lab-grown brain organoids show memory",
-    detail: "Cultured neural tissue demonstrates learning and memory formation.",
-    time: "6h ago",
-    boosts: 178,
-    boosted: false,
-  },
-];
-
-// Recommended labs array - suggests new or relevant research laboratories
-// Each recommendation includes title, detail, and time posted
-const recommendedLabs = [
-  {
-    title: "New lab: Microbiome Dynamics Group",
-    detail: "Exploring gut flora influence on neurological disorders.",
-    time: "1d ago",
-  },
-  {
-    title: "DeepBio AI joins the platform",
-    detail: "Building LLMs for personalized protein synthesis.",
-    time: "2d ago",
-  },
-];
-
 // Main Home component - serves as the landing page of the application
 // Displays research labs, trends, and user updates in a modern dashboard layout
 export default function Home() {
@@ -234,6 +157,12 @@ export default function Home() {
             className="text-sm font-medium hover:text-gray-600 transition-colors duration-200"
           >
             About
+          </Link>
+          <Link
+            href="/signup"
+            className="text-sm font-medium hover:text-gray-600 transition-colors duration-200"
+          >
+            Sign Up
           </Link>
         </div>
       </header>
