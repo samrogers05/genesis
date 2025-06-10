@@ -1,9 +1,13 @@
 'use client';
 
+// Import necessary dependencies for the profile page
 import { useState } from "react";
 import { Home, Search, User, MapPin, Beaker, Target, Edit2, Camera } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
+// Mock data for research labs - contains information about various research laboratories
+// Each lab object includes name, category, summary, tags, location, and featured status
 const mockLabs = [
   {
     name: "NeuroMod Lab",
@@ -211,7 +215,8 @@ const userProfile = {
   tags: ["Synthetic Biology", "CRISPR", "Environmental Biotech", "Microbial Engineering"],
   publications: 23,
   citations: 487,
-  collaborations: 12
+  collaborations: 12,
+  hot: true
 };
 
 export default function Profile() {
@@ -222,6 +227,7 @@ export default function Profile() {
   const [boostedItems, setBoostedItems] = useState(new Set());
   const [isEditing, setIsEditing] = useState(false);
   const [profileData, setProfileData] = useState(userProfile);
+  const pathname = usePathname();
 
   const allTags = Array.from(new Set(mockLabs.flatMap((l) => l.tags)));
   const allLocations = Array.from(new Set(mockLabs.map((l) => l.location)));
@@ -281,7 +287,7 @@ export default function Profile() {
       </header>
 
       {/* Always render Profile View */}
-      <div className="flex-1 px-8 py-8 space-y-8 pb-24 max-w-4xl mx-auto w-full">
+      <div className="flex-1 px-8 py-8 space-y-8 pb-32 max-w-4xl mx-auto w-full">
         {/* Profile Header */}
         <section className="bg-white border border-slate-200 shadow-sm overflow-hidden">
           <div className="h-32 bg-gradient-to-r from-emerald-600 via-teal-600 to-blue-600 relative">
@@ -296,7 +302,7 @@ export default function Profile() {
             </div>
           </div>
           
-          <div className="px-8 py-6 relative">
+          <div className="px-8 py-1 relative">
             <div className="flex items-start gap-6 -mt-16">
               <div className="relative">
                 <div className="w-24 h-24 rounded-full bg-slate-200 border-4 border-white shadow-lg flex items-center justify-center overflow-hidden">
@@ -372,6 +378,10 @@ export default function Profile() {
                   <div className="text-center">
                     <div className="font-semibold text-slate-900">{profileData.collaborations}</div>
                     <div className="text-slate-600">Collaborations</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="font-semibold text-slate-900">{profileData.hot ? "Hot" : "Not Hot"}</div>
+                    <div className="text-slate-600">Status</div>
                   </div>
                 </div>
               </div>
@@ -503,27 +513,27 @@ export default function Profile() {
         </section>
       </div>
 
-      <nav className="fixed bottom-0 w-full bg-white border-t-2 border-slate-200 flex justify-around py-4 shadow-xl">
+      <nav className="fixed bottom-0 w-full bg-white border-t border-black flex justify-around py-3 shadow-lg">
         <Link
-          href="/"
-          className="flex flex-col items-center transition-colors duration-200 text-slate-500 hover:text-slate-700"
+          href="/feed"
+          className={`flex flex-col items-center transition-colors duration-200 ${pathname === "/feed" ? "text-blue-600" : "text-black hover:text-gray-600"}`}
         >
-          <Home className="w-6 h-6 mb-1" />
-          <span className="text-xs sans uppercase tracking-wider">Feed</span>
+          <Home className="w-5 h-5" />
+          <span className="text-xs mt-1">Feed</span>
         </Link>
         <Link
           href="/"
-          className="flex flex-col items-center transition-colors duration-200 text-slate-500 hover:text-slate-700"
+          className={`flex flex-col items-center transition-colors duration-200 ${pathname === "/" ? "text-blue-600" : "text-black hover:text-gray-600"}`}
         >
-          <Search className="w-6 h-6 mb-1" />
-          <span className="text-xs sans uppercase tracking-wider">Explore</span>
+          <Search className="w-5 h-5" />
+          <span className="text-xs mt-1">Explore</span>
         </Link>
         <Link
           href="/profile"
-          className="flex flex-col items-center text-slate-900"
+          className={`flex flex-col items-center transition-colors duration-200 ${pathname === "/profile" ? "text-blue-600" : "text-black hover:text-gray-600"}`}
         >
-          <User className="w-6 h-6 mb-1" />
-          <span className="text-xs sans uppercase tracking-wider">Profile</span>
+          <User className="w-5 h-5" />
+          <span className="text-xs mt-1">Profile</span>
         </Link>
       </nav>
     </div>

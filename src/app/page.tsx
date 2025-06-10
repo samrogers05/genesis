@@ -1,10 +1,14 @@
 "use client";
 
+// Import necessary dependencies for the home page
 import { useState } from "react";
 import { Home as HomeIcon, Search, User } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
+// Mock data for research labs - contains information about various research laboratories
+// Each lab object includes name, category, summary, tags, location, and featured status
 const mockLabs = [
   {
     name: "NeuroMod Lab",
@@ -128,6 +132,8 @@ const mockLabs = [
   },
 ];
 
+// User updates array - contains recent notifications and updates for the user
+// Each update includes a title, detail, and time of the update
 const userUpdates = [
   {
     title: "New results from NeuroMod Lab",
@@ -141,6 +147,8 @@ const userUpdates = [
   },
 ];
 
+// Category trends array - shows trending topics and research areas
+// Each trend includes title, detail, time, number of boosts, and boost status
 const categoryTrends = [
   {
     title: "Transformer models predict cell fate",
@@ -186,6 +194,8 @@ const categoryTrends = [
   },
 ];
 
+// Recommended labs array - suggests new or relevant research laboratories
+// Each recommendation includes title, detail, and time posted
 const recommendedLabs = [
   {
     title: "New lab: Microbiome Dynamics Group",
@@ -199,7 +209,8 @@ const recommendedLabs = [
   },
 ];
 
-// List of local image filenames from public/images
+// List of university images for the carousel display
+// These images are stored in the public/images directory
 const localUniversityImages = [
   "AdobeStock_1153887602.jpeg",
   "AdobeStock_1184915332.jpeg",
@@ -224,7 +235,8 @@ const localUniversityImages = [
   "AdobeStock_1022072034.jpeg",
 ];
 
-// Mapping for category colors
+// Color mapping for different research categories
+// Each category has a specific background color for visual distinction in the UI
 const categoryColors: { [key: string]: string } = {
   "Neuroscience + AI": "bg-blue-50",
   "Synthetic Biology": "bg-green-50",
@@ -243,12 +255,16 @@ const categoryColors: { [key: string]: string } = {
   "Aerospace Engineering": "bg-fuchsia-50",
 };
 
+// Main Home component - serves as the landing page of the application
+// Displays research labs, trends, and user updates in a modern dashboard layout
 export default function Home() {
-  const [filter, setFilter] = useState("");
-  const [locationFilter, setLocationFilter] = useState("");
-  const [search, setSearch] = useState("");
+  // State management for filters and search functionality
+  const [filter, setFilter] = useState(""); // Filter by research category
+  const [locationFilter, setLocationFilter] = useState(""); // Filter by lab location
+  const [search, setSearch] = useState(""); // Search query for labs and content
   const [dailyBoosts, setDailyBoosts] = useState(3);
   const [boostedItems, setBoostedItems] = useState(new Set<number>());
+  const pathname = usePathname();
 
   const allTags = Array.from(new Set(mockLabs.flatMap((l) => l.tags)));
   const allLocations = Array.from(new Set(mockLabs.map((l) => l.location)));
@@ -415,7 +431,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="flex-1 p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="flex-1 p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-32">
           {filteredLabs.map((lab, i) => (
             <div
               key={i}
@@ -493,25 +509,25 @@ export default function Home() {
 
       <nav className="fixed bottom-0 w-full bg-white border-t border-black flex justify-around py-3 shadow-lg">
         <Link
-          href="/"
-          className="flex flex-col items-center transition-colors duration-200 text-black hover:text-gray-600"
+          href="/feed"
+          className={`flex flex-col items-center transition-colors duration-200 ${pathname === "/feed" ? "text-blue-600" : "text-black hover:text-gray-600"}`}
         >
           <HomeIcon className="w-5 h-5" />
           <span className="text-xs mt-1">Feed</span>
         </Link>
         <Link
           href="/"
-          className="flex flex-col items-center transition-colors duration-200 text-black hover:text-gray-600"
+          className={`flex flex-col items-center transition-colors duration-200 ${pathname === "/" ? "text-blue-600" : "text-black hover:text-gray-600"}`}
         >
           <Search className="w-5 h-5" />
           <span className="text-xs mt-1">Explore</span>
         </Link>
         <Link
           href="/profile"
-          className="flex flex-col items-center text-black hover:text-gray-600 transition-colors duration-200"
+          className={`flex flex-col items-center transition-colors duration-200 ${pathname === "/profile" ? "text-blue-600" : "text-black hover:text-gray-600"}`}
         >
           <User className="w-5 h-5" />
-          <span className="text-xs sans uppercase tracking-wider">Profile</span>
+          <span className="text-xs mt-1">Profile</span>
         </Link>
       </nav>
     </div>

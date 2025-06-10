@@ -1,6 +1,8 @@
+// PostCSS configuration file
+// This file configures the CSS processing pipeline
 module.exports = {
   plugins: {
-    tailwindcss: {},
-    autoprefixer: {},
+    tailwindcss: {}, // Enable Tailwind CSS processing
+    autoprefixer: {}, // Enable automatic vendor prefixing
   },
 }

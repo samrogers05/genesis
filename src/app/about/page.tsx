@@ -1,12 +1,15 @@
 "use client";
 
+// Import necessary dependencies for the about page
 import { Home as HomeIcon, Search, User } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
+// About component - displays information about Genesis and its founders
 export default function About() {
   return (
     <div className="flex flex-col min-h-screen bg-white font-sans text-gray-900">
+      {/* Header section with app title and tagline */}
       <header className="flex items-center justify-between px-4 py-3 border-b border-black bg-white uppercase tracking-wide">
         <div className="flex items-center gap-3">
           <h1 className="text-md font-bold">Genesis</h1>
@@ -15,7 +18,9 @@ export default function About() {
         <div></div>
       </header>
 
+      {/* Main content section */}
       <main className="flex-1 px-6 py-8 max-w-6xl mx-auto">
+        {/* Introduction section */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold mb-4">About Genesis</h1>
           <p className="text-lg text-gray-600 max-w-3xl mx-auto">
@@ -25,8 +30,9 @@ export default function About() {
           </p>
         </div>
 
+        {/* Founders section - displays information about the company founders */}
         <div className="grid md:grid-cols-2 gap-12 mb-16">
-          {/* Bowen Kim */}
+          {/* Bowen Kim's profile card */}
           <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
             <div className="relative h-64">
               <Image
@@ -58,7 +64,7 @@ export default function About() {
             </div>
           </div>
 
-          {/* Sam Rogers */}
+          {/* Sam Rogers' profile card */}
           <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
             <div className="relative h-64">
               <Image
@@ -91,6 +97,7 @@ export default function About() {
           </div>
         </div>
 
+        {/* Mission statement section */}
         <div className="bg-gray-50 rounded-lg p-8 border border-gray-200">
           <h2 className="text-2xl font-bold mb-4">Our Mission</h2>
           <p className="text-gray-700 mb-4">
@@ -107,6 +114,7 @@ export default function About() {
         </div>
       </main>
 
+      {/* Bottom navigation bar - provides quick access to main sections */}
       <nav className="fixed bottom-0 w-full bg-white border-t border-black flex justify-around py-3 shadow-lg">
         <Link
           href="/"
