@@ -1,262 +1,241 @@
 'use client';
 
 // Import necessary dependencies for the profile page
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Home, Search, User, MapPin, Beaker, Target, Edit2, Camera } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
-// Mock data for research labs - contains information about various research laboratories
-// Each lab object includes name, category, summary, tags, location, and featured status
-const mockLabs = [
-  {
-    name: "NeuroMod Lab",
-    category: "Neuroscience + AI",
-    summary: "Rewiring neural pathways through brain-computer interfaces.",
-    tags: ["Cognition", "Signal Decoding"],
-    location: "California",
-    featured: true,
-  },
-  {
-    name: "SynBio Forge",
-    category: "Synthetic Biology",
-    summary: "Building programmable cells to sense and respond to disease.",
-    tags: ["CRISPR", "Metabolic Engineering"],
-    location: "Massachusetts",
-    featured: true,
-  },
-  {
-    name: "QuantumCore",
-    category: "Quantum Materials",
-    summary: "Stabilizing quantum dots for practical photonic applications.",
-    tags: ["Photonics", "Nanofabrication"],
-    location: "New York",
-    featured: false,
-  },
-  {
-    name: "EcoGene Systems",
-    category: "Environmental Genomics",
-    summary: "Tracking biodiversity through DNA shed in ecosystems.",
-    tags: ["Metagenomics", "Climate Tracking"],
-    location: "Oregon",
-    featured: false,
-  },
-  {
-    name: "MetaCell Studio",
-    category: "Cellular Modeling",
-    summary: "Modeling emergent behavior in organoid development.",
-    tags: ["Organoids", "AI Simulation"],
-    location: "Texas",
-    featured: true,
-  },
-  {
-    name: "CryoPreserve Labs",
-    category: "Cryobiology",
-    summary: "Advancing cellular preservation techniques for regenerative medicine.",
-    tags: ["Cryogenics", "Cell Therapy"],
-    location: "Colorado",
-    featured: false,
-  },
-  {
-    name: "Photonic Dynamics",
-    category: "Optics + Physics",
-    summary: "Developing ultra-fast laser systems for precision manufacturing.",
-    tags: ["Laser Tech", "Precision Engineering"],
-    location: "Arizona",
-    featured: true,
-  },
-  {
-    name: "BioCompute Institute",
-    category: "Computational Biology",
-    summary: "Creating AI models to predict protein folding and drug interactions.",
-    tags: ["Machine Learning", "Drug Discovery"],
-    location: "Washington",
-    featured: false,
-  },
-  {
-    name: "Neural Interface Co.",
-    category: "Bioengineering",
-    summary: "Pioneering implantable devices for treating neurological disorders.",
-    tags: ["Implants", "Neural Stimulation"],
-    location: "Minnesota",
-    featured: false,
-  },
-  {
-    name: "Fusion Dynamics",
-    category: "Energy Physics",
-    summary: "Developing compact fusion reactors for clean energy generation.",
-    tags: ["Fusion", "Clean Energy"],
-    location: "Nevada",
-    featured: true,
-  },
-  {
-    name: "Genome Insights",
-    category: "Genomics",
-    summary: "Mapping rare genetic variants linked to complex diseases.",
-    tags: ["Sequencing", "Disease Genetics"],
-    location: "Maryland",
-    featured: false,
-  },
-  {
-    name: "Nanobot Therapeutics",
-    category: "Nanotechnology",
-    summary: "Engineering microscopic robots for targeted cancer treatment.",
-    tags: ["Nanobots", "Cancer Therapy"],
-    location: "North Carolina",
-    featured: false,
-  },
-  {
-    name: "Climate Modeling Hub",
-    category: "Climate Science",
-    summary: "Predicting climate patterns using advanced atmospheric models.",
-    tags: ["Climate Data", "Atmospheric Science"],
-    location: "Colorado",
-    featured: false,
-  },
-  {
-    name: "Bionic Prosthetics",
-    category: "Biomedical Engineering",
-    summary: "Creating mind-controlled prosthetics with sensory feedback.",
-    tags: ["Prosthetics", "Neural Control"],
-    location: "Illinois",
-    featured: true,
-  },
-  {
-    name: "Space Materials Lab",
-    category: "Aerospace Engineering",
-    summary: "Developing ultra-lightweight materials for space exploration.",
-    tags: ["Aerospace", "Advanced Materials"],
-    location: "Florida",
-    featured: false,
-  },
-];
+// Removed mock data for research labs as we are now using Supabase
+// const mockLabs = [
+//   ...
+// ];
 
-const userUpdates = [
-  {
-    title: "New results from NeuroMod Lab",
-    detail: "Real-time decoding of motor intentions from EEG.",
-    time: "2h ago",
-  },
-  {
-    title: "SynBio Forge opens internship apps",
-    detail: "Applications now open for summer synthetic biology program.",
-    time: "5h ago",
-  },
-];
+// Removed mock data for user updates
+// const userUpdates = [
+//   ...
+// ];
 
-const categoryTrends = [
-  {
-    title: "Transformer models predict cell fate",
-    detail: "Large language models now applied to single-cell sequencing.",
-    time: "3h ago",
-    boosts: 127,
-    boosted: false,
-  },
-  {
-    title: "CRISPR base editing breakthrough",
-    detail: "A new enzyme enables reversible epigenetic control in vivo.",
-    time: "7h ago",
-    boosts: 89,
-    boosted: false,
-  },
-  {
-    title: "Room-temperature superconductor claims",
-    detail: "New research challenges previous ambient superconductivity findings.",
-    time: "5h ago",
-    boosts: 203,
-    boosted: true,
-  },
-  {
-    title: "AlphaFold 3 predicts protein interactions",
-    detail: "Enhanced AI model now accurately predicts protein-drug complexes.",
-    time: "8h ago",
-    boosts: 156,
-    boosted: false,
-  },
-  {
-    title: "Quantum error correction milestone",
-    detail: "IBM achieves 99.9% fidelity in quantum error correction protocols.",
-    time: "12h ago",
-    boosts: 94,
-    boosted: false,
-  },
-  {
-    title: "Lab-grown brain organoids show memory",
-    detail: "Cultured neural tissue demonstrates learning and memory formation.",
-    time: "6h ago",
-    boosts: 178,
-    boosted: false,
-  },
-];
+// Removed mock data for category trends
+// const categoryTrends = [
+//   ...
+// ];
 
-const recommendedLabs = [
-  {
-    title: "New lab: Microbiome Dynamics Group",
-    detail: "Exploring gut flora influence on neurological disorders.",
-    time: "1d ago",
-  },
-  {
-    title: "DeepBio AI joins the platform",
-    detail: "Building LLMs for personalized protein synthesis.",
-    time: "2d ago",
-  },
-];
+// Removed mock data for recommended labs
+// const recommendedLabs = [
+//   ...
+// ];
 
-// Sample user profile data
-const userProfile = {
-  name: "Dr. Sarah Chen",
-  title: "Research Scientist",
-  lab: "SynBio Forge",
-  location: "Massachusetts",
-  email: "s.chen@synbioforge.org",
-  researchProject: "Engineered Microbial Consortiums for Environmental Remediation",
-  researchQuestion: "What happens when we engineer multiple bacterial species to work together in degrading plastic pollutants?",
-  bio: "Synthetic biologist focused on designing microbial communities for environmental applications. Previously worked on CRISPR-based metabolic engineering at MIT.",
-  tags: ["Synthetic Biology", "CRISPR", "Environmental Biotech", "Microbial Engineering"],
-  publications: 23,
-  citations: 487,
-  collaborations: 12,
-  hot: true
-};
+// Removed sample user profile data as we are now fetching from Supabase
+// const userProfile = {
+//   ...
+// };
 
 export default function Profile() {
+  const [loading, setLoading] = useState(true);
+  const [profileData, setProfileData] = useState<any>(null);
   const [filter, setFilter] = useState("");
   const [locationFilter, setLocationFilter] = useState("");
   const [search, setSearch] = useState("");
-  const [dailyBoosts, setDailyBoosts] = useState(3);
-  const [boostedItems, setBoostedItems] = useState(new Set());
+  const [dailyBoosts, setDailyBoosts] = useState(3); // Keeping for now, but not tied to Supabase
+  const [boostedItems, setBoostedItems] = useState(new Set()); // Keeping for now, but not tied to Supabase
   const [isEditing, setIsEditing] = useState(false);
-  const [profileData, setProfileData] = useState(userProfile);
+  const [error, setError] = useState<string | null>(null);
+  const [allTags, setAllTags] = useState<string[]>([]); // To store all available tags from Supabase
   const pathname = usePathname();
+  const router = useRouter();
+  const supabase = createClientComponentClient();
 
-  const allTags = Array.from(new Set(mockLabs.flatMap((l) => l.tags)));
-  const allLocations = Array.from(new Set(mockLabs.map((l) => l.location)));
-  const filteredLabs = mockLabs.filter(
-    (lab) =>
-      (!filter || lab.tags.includes(filter)) &&
-      (!locationFilter || lab.location === locationFilter) &&
-      (lab.name.toLowerCase().includes(search.toLowerCase()) ||
-        lab.summary.toLowerCase().includes(search.toLowerCase()))
-  );
+  useEffect(() => {
+    async function loadProfile() {
+      setLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
 
-  const featuredLabs = mockLabs.filter((lab) => lab.featured);
+      if (!user) {
+        router.push('/login'); // Redirect to login if not authenticated
+        return;
+      }
 
-  const handleSignalBoost = (index: number) => {
-    if (dailyBoosts > 0 && !boostedItems.has(index)) {
-      setDailyBoosts(prev => prev - 1);
-      setBoostedItems(prev => new Set([...prev, index]));
+      const { data: profile, error: profileError } = await supabase
+        .from('Profile')
+        .select('*, profileTags(tagId, Tags(name))') // Select profile data and related tags
+        .eq('id', user.id)
+        .single();
+
+      if (profileError && profileError.code === 'PGRST116') { // PGRST116 means no rows found
+        router.push('/create-profile'); // Redirect to create profile page if no profile exists
+        return;
+      } else if (profileError) {
+        console.error('Error fetching profile:', profileError);
+        // Handle other errors, maybe show a generic error page
+        setLoading(false);
+        return;
+      }
+      
+      // Transform the fetched profile data to match the expected structure
+      const transformedProfile = {
+        ...profile,
+        tags: profile.profileTags.map((pt: any) => pt.Tags.name), // Extract tag names
+        // Directly use Supabase column names
+        fullName: profile.fullName,
+        avatarUrl: profile.avatarUrl,
+        researchProject: profile.researchProject,
+        keyQuestion: profile.keyQuestion,
+        about: profile.about,
+        location: profile.location,
+        organization: profile.organization,
+        labAffiliation: profile.labAffiliation,
+        email: profile.email,
+        publications: profile.publications,
+        citations: profile.citations,
+        collaborations: profile.collaborations,
+        hot: profile.hot,
+      };
+
+      setProfileData(transformedProfile);
+      setLoading(false);
+    }
+
+    async function fetchAllTags() {
+      const { data, error } = await supabase.from('Tags').select('name');
+      if (!error && data) {
+        setAllTags(data.map((t: { name: string }) => t.name).filter(Boolean));
+      }
+    }
+
+    loadProfile();
+    fetchAllTags();
+  }, [router, supabase]);
+
+  const handleUpdateProfile = async () => {
+    setLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      console.error('User not authenticated for update.');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const updates = {
+        id: user.id,
+        fullName: profileData.fullName,
+        avatarUrl: profileData.avatarUrl,
+        researchProject: profileData.researchProject,
+        keyQuestion: profileData.keyQuestion,
+        about: profileData.about,
+        location: profileData.location,
+        organization: profileData.organization,
+        labAffiliation: profileData.labAffiliation,
+        email: profileData.email
+      };
+
+      const { error: profileUpdateError } = await supabase
+        .from('Profile')
+        .upsert(updates, { onConflict: 'id' });
+
+      if (profileUpdateError) {
+        throw profileUpdateError;
+      }
+
+      // Handle tag updates: delete existing and insert new ones
+      await supabase.from('profileTags').delete().eq('profileId', user.id);
+
+      if (profileData.tags && profileData.tags.length > 0) {
+        const { data: tagData, error: tagError } = await supabase
+          .from('Tags')
+          .select('id, name')
+          .in('name', profileData.tags);
+
+        if (tagError) {
+          throw tagError;
+        }
+
+        const profileTagInserts = tagData.map(tag => ({
+          profileId: user.id,
+          tagId: tag.id
+        }));
+
+        const { error: profileTagsInsertError } = await supabase
+          .from('profileTags')
+          .upsert(profileTagInserts, { onConflict: 'profileId,tagId' });
+
+        if (profileTagsInsertError) {
+          throw profileTagsInsertError;
+        }
+      }
+
+      // Reload the profile data to show the updated information
+      const { data: updatedProfile, error: reloadError } = await supabase
+        .from('Profile')
+        .select('*, profileTags(tagId, Tags(name))')
+        .eq('id', user.id)
+        .single();
+
+      if (!reloadError && updatedProfile) {
+        const transformedProfile = {
+          ...updatedProfile,
+          tags: updatedProfile.profileTags.map((pt: any) => pt.Tags.name),
+        };
+        setProfileData(transformedProfile);
+      }
+
+      setIsEditing(false); // Exit edit mode on successful update
+    } catch (error: any) {
+      console.error('Error updating profile:', error);
+      setError(error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleProfileUpdate = (field: string, value: string) => {
-    setProfileData(prev => ({
+  const handleAddTag = (tag: string) => {
+    if (profileData.tags.length < 5 && !profileData.tags.includes(tag)) {
+      setProfileData((prev: any) => ({
+        ...prev,
+        tags: [...prev.tags, tag]
+      }));
+    }
+  };
+
+  const handleRemoveTag = (tagToRemove: string) => {
+    setProfileData((prev: any) => ({
+      ...prev,
+      tags: prev.tags.filter((tag: string) => tag !== tagToRemove)
+    }));
+  };
+
+  const handleProfileUpdate = (field: string, value: string | number) => {
+    setProfileData((prev: any) => ({
       ...prev,
       [field]: value
     }));
   };
 
+  if (loading) {
+    return <div className="flex justify-center items-center h-screen text-lg font-semibold">Loading profile...</div>;
+  }
+
+  if (!profileData) {
+    return <div className="flex justify-center items-center h-screen text-lg font-semibold">Profile not found.</div>;
+  }
+
   return (
-    <div className="flex flex-col min-h-screen bg-stone-50 text-slate-900">
+    <div className="flex flex-col min-h-screen bg-stone-50 font-serif text-slate-900">
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          @import url('https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600&display=swap');
+          * {
+            font-family: 'Crimson Text', serif;
+          }
+          .sans {
+            font-family: 'Inter', sans-serif;
+          }
+        `
+      }} />
+      
       <header className="flex items-center justify-between px-8 py-6 border-b-2 border-slate-200 bg-white">
         <div className="flex items-center gap-6">
           <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Genesis</h1>
@@ -278,10 +257,16 @@ export default function Profile() {
       <div className="flex-1 px-8 py-8 space-y-8 pb-32 max-w-4xl mx-auto w-full">
         {/* Profile Header */}
         <section className="bg-white border border-slate-200 shadow-sm overflow-hidden">
-          <div className="h-32 bg-gradient-to-r from-blue-100 via-indigo-100 to-purple-100 relative">
+          <div className="h-32 bg-gradient-to-r from-emerald-600 via-teal-600 to-blue-600 relative">
             <div className="absolute top-4 right-4">
               <button
-                onClick={() => setIsEditing(!isEditing)}
+                onClick={() => {
+                  if (isEditing) {
+                    handleUpdateProfile();
+                  } else {
+                    setIsEditing(true);
+                  }
+                }}
                 className="flex items-center gap-2 px-4 py-2 bg-white/90 text-slate-700 text-sm sans border border-white/50 hover:bg-white hover:border-slate-300 transition-all duration-200"
               >
                 <Edit2 className="w-4 h-4" />
@@ -290,12 +275,12 @@ export default function Profile() {
             </div>
           </div>
           
-          <div className="px-8 py-0.5 relative">
+          <div className="px-8 py-1 relative">
             <div className="flex items-start gap-6 -mt-16">
               <div className="relative">
                 <div className="w-24 h-24 rounded-full bg-slate-200 border-4 border-white shadow-lg flex items-center justify-center overflow-hidden">
                   <div className="text-slate-600 text-2xl font-semibold">
-                    {profileData.name.split(' ').map(n => n[0]).join('')}
+                    {profileData.fullName?.split(' ').map((n: string) => n[0]).join('')}
                   </div>
                 </div>
                 {isEditing && (
@@ -310,12 +295,12 @@ export default function Profile() {
                   {isEditing ? (
                     <input
                       type="text"
-                      value={profileData.name}
-                      onChange={(e) => handleProfileUpdate('name', e.target.value)}
+                      value={profileData.fullName || ''}
+                      onChange={(e) => handleProfileUpdate('fullName', e.target.value)}
                       className="text-2xl font-semibold text-slate-900 border border-slate-300 px-3 py-1 bg-white focus:border-slate-500 focus:outline-none"
                     />
                   ) : (
-                    <h1 className="text-2xl font-semibold text-slate-900">{profileData.name}</h1>
+                    <h1 className="text-2xl font-semibold text-slate-900">{profileData.fullName}</h1>
                   )}
                 </div>
                 
@@ -323,48 +308,54 @@ export default function Profile() {
                   {isEditing ? (
                     <input
                       type="text"
-                      value={profileData.title}
-                      onChange={(e) => handleProfileUpdate('title', e.target.value)}
+                      value={profileData.researchProject || ''}
+                      onChange={(e) => handleProfileUpdate('researchProject', e.target.value)}
                       className="text-lg border border-slate-300 px-3 py-1 bg-white focus:border-slate-500 focus:outline-none"
                     />
                   ) : (
-                    <span className="text-lg">{profileData.title}</span>
+                    <span className="text-lg">{profileData.researchProject}</span>
                   )}
                   <span className="text-slate-400">•</span>
                   <div className="flex items-center gap-2">
                     <Beaker className="w-4 h-4" />
                     {isEditing ? (
-                      <select
-                        value={profileData.lab}
-                        onChange={(e) => handleProfileUpdate('lab', e.target.value)}
+                      <input
+                        type="text"
+                        value={profileData.labAffiliation || ''}
+                        onChange={(e) => handleProfileUpdate('labAffiliation', e.target.value)}
                         className="border border-slate-300 px-3 py-1 bg-white focus:border-slate-500 focus:outline-none"
-                      >
-                        {mockLabs.map(lab => (
-                          <option key={lab.name} value={lab.name}>{lab.name}</option>
-                        ))}
-                      </select>
+                      />
                     ) : (
-                      <span>{profileData.lab}</span>
+                      <span>{profileData.labAffiliation}</span>
                     )}
                   </div>
                   <span className="text-slate-400">•</span>
                   <div className="flex items-center gap-2">
                     <MapPin className="w-4 h-4" />
-                    <span>{profileData.location}</span>
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={profileData.location || ''}
+                        onChange={(e) => handleProfileUpdate('location', e.target.value)}
+                        className="border border-slate-300 px-3 py-1 bg-white focus:border-slate-500 focus:outline-none"
+                      />
+                    ) : (
+                      <span>{profileData.location}</span>
+                    )}
                   </div>
                 </div>
                 
                 <div className="flex gap-8 text-sm sans">
                   <div className="text-center">
-                    <div className="font-semibold text-slate-900">{profileData.publications}</div>
+                    <div className="font-semibold text-slate-900">{profileData.publications || 0}</div>
                     <div className="text-slate-600">Publications</div>
                   </div>
                   <div className="text-center">
-                    <div className="font-semibold text-slate-900">{profileData.citations}</div>
+                    <div className="font-semibold text-slate-900">{profileData.citations || 0}</div>
                     <div className="text-slate-600">Citations</div>
                   </div>
                   <div className="text-center">
-                    <div className="font-semibold text-slate-900">{profileData.collaborations}</div>
+                    <div className="font-semibold text-slate-900">{profileData.collaborations || 0}</div>
                     <div className="text-slate-600">Collaborations</div>
                   </div>
                   <div className="text-center">
@@ -392,7 +383,7 @@ export default function Profile() {
                 {isEditing ? (
                   <input
                     type="text"
-                    value={profileData.researchProject}
+                    value={profileData.researchProject || ''}
                     onChange={(e) => handleProfileUpdate('researchProject', e.target.value)}
                     className="w-full text-lg font-semibold text-slate-900 border border-slate-300 px-4 py-3 bg-white focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-200"
                   />
@@ -405,14 +396,14 @@ export default function Profile() {
                 <label className="text-sm sans uppercase tracking-widest text-slate-500 mb-3 block">Key Research Question</label>
                 {isEditing ? (
                   <textarea
-                    value={profileData.researchQuestion}
-                    onChange={(e) => handleProfileUpdate('researchQuestion', e.target.value)}
+                    value={profileData.keyQuestion || ''}
+                    onChange={(e) => handleProfileUpdate('keyQuestion', e.target.value)}
                     rows={3}
                     className="w-full text-slate-700 leading-relaxed border border-slate-300 px-4 py-3 bg-white focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-200 resize-none"
                   />
                 ) : (
                   <p className="text-slate-700 leading-relaxed bg-emerald-25 border border-emerald-200 p-4 italic">
-                    "{profileData.researchQuestion}"
+                    "{profileData.keyQuestion}"
                   </p>
                 )}
               </div>
@@ -420,18 +411,35 @@ export default function Profile() {
               <div>
                 <label className="text-sm sans uppercase tracking-widest text-slate-500 mb-3 block">Research Areas</label>
                 <div className="flex flex-wrap gap-3">
-                  {profileData.tags.map((tag, i) => (
+                  {profileData.tags.map((tag: string, i: number) => (
                     <span
                       key={i}
                       className="px-4 py-2 text-sm sans bg-slate-100 text-slate-700 border border-slate-300"
                     >
                       {tag}
+                      {isEditing && (
+                        <button
+                          type="button"
+                          className="ml-2 text-slate-500 hover:text-slate-700 focus:outline-none"
+                          onClick={() => handleRemoveTag(tag)}
+                          aria-label={`Remove ${tag}`}
+                        >
+                          ×
+                        </button>
+                      )}
                     </span>
                   ))}
-                  {isEditing && (
-                    <button className="px-4 py-2 text-sm sans border border-dashed border-slate-400 text-slate-500 hover:border-slate-500 hover:text-slate-600 transition-all duration-200">
-                      + Add Tag
-                    </button>
+                  {isEditing && profileData.tags.length < 5 && (
+                    <select
+                      onChange={(e) => handleAddTag(e.target.value)}
+                      value=""
+                      className="px-4 py-2 text-sm sans border border-dashed border-slate-400 text-slate-500 hover:border-slate-500 hover:text-slate-600 transition-all duration-200"
+                    >
+                      <option value="" disabled>+ Add Tag</option>
+                      {allTags.filter(tag => !profileData.tags.includes(tag)).map(tag => (
+                        <option key={tag} value={tag}>{tag}</option>
+                      ))}
+                    </select>
                   )}
                 </div>
               </div>
@@ -441,19 +449,19 @@ export default function Profile() {
 
         {/* About Section */}
         <section className="bg-white border border-slate-200 shadow-sm">
-          <div className="px-8 py-6 border-b border-slate-100">
+          <div className="px-8 py-2 border-b border-slate-100">
             <h2 className="text-xl font-semibold text-slate-900">About</h2>
           </div>
-          <div className="p-8">
+          <div className="px-8 pt-2 pb-8">
             {isEditing ? (
               <textarea
-                value={profileData.bio}
-                onChange={(e) => handleProfileUpdate('bio', e.target.value)}
+                value={profileData.about || ''}
+                onChange={(e) => handleProfileUpdate('about', e.target.value)}
                 rows={4}
                 className="w-full text-slate-700 leading-relaxed border border-slate-300 px-4 py-3 bg-white focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-200 resize-none"
               />
             ) : (
-              <p className="text-slate-700 leading-relaxed">{profileData.bio}</p>
+              <p className="text-slate-700 leading-relaxed">{profileData.about}</p>
             )}
           </div>
         </section>
@@ -470,7 +478,7 @@ export default function Profile() {
                 {isEditing ? (
                   <input
                     type="email"
-                    value={profileData.email}
+                    value={profileData.email || ''}
                     onChange={(e) => handleProfileUpdate('email', e.target.value)}
                     className="w-full text-slate-700 border border-slate-300 px-4 py-2 bg-white focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-200"
                   />
@@ -479,8 +487,30 @@ export default function Profile() {
                 )}
               </div>
               <div>
+                <label className="text-sm sans uppercase tracking-widest text-slate-500 mb-2 block">Organization</label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={profileData.organization || ''}
+                    onChange={(e) => handleProfileUpdate('organization', e.target.value)}
+                    className="w-full text-slate-700 border border-slate-300 px-4 py-2 bg-white focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-200"
+                  />
+                ) : (
+                  <p className="text-slate-700">{profileData.organization}</p>
+                )}
+              </div>
+              <div>
                 <label className="text-sm sans uppercase tracking-widest text-slate-500 mb-2 block">Lab Affiliation</label>
-                <p className="text-slate-700">{profileData.lab}</p>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={profileData.labAffiliation || ''}
+                    onChange={(e) => handleProfileUpdate('labAffiliation', e.target.value)}
+                    className="w-full text-slate-700 border border-slate-300 px-4 py-2 bg-white focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-200"
+                  />
+                ) : (
+                  <p className="text-slate-700">{profileData.labAffiliation}</p>
+                )}
               </div>
             </div>
             
@@ -501,7 +531,7 @@ export default function Profile() {
         </section>
       </div>
 
-      <nav className="fixed bottom-0 w-full bg-white border-t border-black flex justify-around py-3 shadow-lg sans">
+      <nav className="fixed bottom-0 w-full bg-white border-t border-black flex justify-around py-3 shadow-lg">
         <Link
           href="/feed"
           className={`flex flex-col items-center transition-colors duration-200 ${pathname === "/feed" ? "text-blue-600" : "text-black hover:text-gray-600"}`}

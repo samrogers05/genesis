@@ -28,40 +28,44 @@ export default function Login() {
   };
 
   return (
-    <div className="flex justify-center items-center h-screen">
-      <div className="w-full max-w-md">
+    <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+      <div className="w-full max-w-md bg-white rounded-xl shadow-2xl overflow-hidden md:max-w-lg lg:max-w-xl animate-fade-in-up">
         <form
           onSubmit={handleSignIn}
-          className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4"
+          className="px-8 py-8 md:px-10 md:py-10 space-y-6"
         >
-          <h2 className="text-2xl font-bold mb-6 text-center">Login</h2>
-          {error && <p className="text-red-500 text-xs italic mb-4">{error}</p>}
-          <div className="mb-4">
+          <h2 className="text-3xl font-extrabold text-gray-900 text-center tracking-tight">Welcome Back!</h2>
+          {error && (
+            <p className="text-red-600 text-sm text-center font-medium bg-red-50 p-3 rounded-md border border-red-200">
+              {error}
+            </p>
+          )}
+          <div>
             <label
-              className="block text-gray-700 text-sm font-bold mb-2"
+              className="block text-sm font-semibold text-gray-700 mb-2"
               htmlFor="email"
             >
-              Email
+              Email Address
             </label>
             <input
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              className="block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 ease-in-out text-base"
               id="email"
               type="email"
-              placeholder="Email"
+              placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
           </div>
-          <div className="mb-6">
+          <div>
             <label
-              className="block text-gray-700 text-sm font-bold mb-2"
+              className="block text-sm font-semibold text-gray-700 mb-2"
               htmlFor="password"
             >
               Password
             </label>
             <input
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline"
+              className="block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 ease-in-out text-base"
               id="password"
               type="password"
               placeholder="********"
@@ -70,20 +74,21 @@ export default function Login() {
               required
             />
           </div>
-          <div className="flex items-center justify-between">
-            <button
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-              type="submit"
-            >
-              Sign In
-            </button>
+          <button
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-300 ease-in-out transform hover:-translate-y-0.5"
+            type="submit"
+          >
+            Sign In
+          </button>
+          <p className="text-center text-sm text-gray-600">
+            Don't have an account?{" "}
             <a
-              className="inline-block align-baseline font-bold text-sm text-blue-500 hover:text-blue-800"
+              className="font-medium text-blue-600 hover:text-blue-800 transition duration-200"
               href="/signup"
             >
-              Don't have an account? Sign Up
+              Sign Up
             </a>
-          </div>
+          </p>
         </form>
       </div>
     </div>
