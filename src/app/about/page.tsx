@@ -4,10 +4,11 @@
 import { Home as HomeIcon, Search, User } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase";
 
 // About component - displays information about Genesis and its founders
 export default function About() {
+  const supabase = createClient();
   return (
     <div className="flex flex-col min-h-screen bg-white font-sans text-gray-900">
       {/* Header section with app title and tagline */}
