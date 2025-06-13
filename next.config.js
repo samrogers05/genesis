@@ -6,6 +6,12 @@ const nextConfig = {
   images: {
     domains: ['images.pexels.com', 'media.licdn.com', 'fdlsmxwsjajabqjgumve.supabase.co'], // Allow images from these domains
   },
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.externals.push('@supabase/realtime-js');
+    }
+    return config;
+  },
 }
 
 module.exports = nextConfig
