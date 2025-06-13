@@ -64,7 +64,7 @@ async function getProjects(tagFilter: string, locationFilter: string, searchTerm
     }
 
     if (searchTerm) {
-      query = query.or(`title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`);
+      query = query.or(`name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`);
     }
 
     const { data, error } = await query;
@@ -427,7 +427,13 @@ export default function Home() {
                   </button>
                   {user && user.id !== lab.creator?.id && (
                     <Link href={`/chat/${lab.creator?.id}`}>
-                      <button className="px-3 py-2 text-sm bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-all duration-200 transform hover:scale-105 active:scale-95">
+                      <button
+                        className="px-3 py-2 text-sm bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-all duration-200 transform hover:scale-105 active:scale-95"
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent click from propagating to parent div
+                          // No need for router.push here, Link handles navigation
+                        }}
+                      >
                         Collaborate
                       </button>
                     </Link>

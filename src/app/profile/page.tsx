@@ -6,6 +6,7 @@ import { Home, Search, User, MapPin, Beaker, Target, Edit2, Camera } from "lucid
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import Image from "next/image";
 
 // Removed mock data for research labs as we are now using Supabase
 // const mockLabs = [
@@ -50,6 +51,20 @@ interface ProfileData {
   tags: string[];
 }
 
+interface ProjectData {
+  id: string;
+  name: string;
+  description: string;
+  photo: string | null;
+  createdAt: string;
+  signalBoosts: number;
+  creator: {
+    id: string;
+    fullName: string;
+    avatarUrl: string;
+  };
+}
+
 export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
@@ -61,6 +76,7 @@ export default function Profile() {
   const [isEditing, setIsEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [allTags, setAllTags] = useState<string[]>([]); // To store all available tags from Supabase
+  const [userProjects, setUserProjects] = useState<ProjectData[]>([]); // New state for user's projects
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClientComponentClient();
@@ -113,6 +129,33 @@ export default function Profile() {
       };
 
       setProfileData(transformedProfile);
+
+      // Fetch user's projects
+      const { data: projects, error: projectsError } = await supabase
+        .from('Project')
+        .select(`
+          id,
+          name,
+          description,
+          photo,
+          createdAt,
+          signalBoosts,
+          creator:Profile(id, fullName, avatarUrl)
+        `)
+        .eq('createdBy', user.id)
+        .order('createdAt', { ascending: false });
+
+      if (projectsError) {
+        console.error('Error fetching user projects:', projectsError);
+      } else {
+        // Transform projects to match ProjectData interface
+        const transformedProjects = projects.map((project: any) => ({
+          ...project,
+          creator: project.creator ? project.creator[0] : null, // Ensure creator is an object, not an array
+        }));
+        setUserProjects(transformedProjects);
+      }
+
       setLoading(false);
     }
 
@@ -612,6 +655,52 @@ export default function Profile() {
             </div>
           </div>
         </section>
+
+        {/* My Projects Section */}
+        <section className="bg-white border border-slate-200 shadow-sm">
+          <div className="px-8 py-6 border-b border-slate-100">
+            <h2 className="text-xl font-semibold text-slate-900">My Projects</h2>
+          </div>
+          <div className="p-8">
+            {userProjects.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {userProjects.map((project) => (
+                  <Link href={`/project/${project.id}`} key={project.id} className="block group">
+                    <div className="bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
+                      <div className="w-full h-40 relative bg-slate-100 flex items-center justify-center overflow-hidden">
+                        {project.photo ? (
+                          <Image
+                            src={project.photo}
+                            alt={project.name}
+                            layout="fill"
+                            objectFit="cover"
+                            className="group-hover:scale-105 transition-transform duration-300"
+                          />
+                        ) : (
+                          <div className="text-slate-400 text-lg">No Image</div>
+                        )}
+                      </div>
+                      <div className="p-4">
+                        <h3 className="text-lg font-semibold text-slate-900 mb-1 group-hover:text-emerald-600 transition-colors duration-200">
+                          {project.name}
+                        </h3>
+                        <p className="text-sm text-slate-600 line-clamp-2">{project.description}</p>
+                        <div className="flex items-center text-xs text-slate-500 mt-2">
+                          <span>{project.signalBoosts || 0} boosts</span>
+                          <span className="mx-2">•</span>
+                          <span>{new Date(project.createdAt).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <p className="text-slate-600 italic">You haven't created any projects yet.</p>
+            )}
+          </div>
+        </section>
+
       </div>
 
       <nav className="fixed bottom-0 w-full bg-white border-t border-black flex justify-around py-3 shadow-lg">
