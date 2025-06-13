@@ -4,7 +4,7 @@ const nextConfig = {
   reactStrictMode: true,
   // Configure image domains for Next.js Image component
   images: {
-    domains: ['images.pexels.com', 'media.licdn.com'], // Allow images from these domains
+    domains: ['images.pexels.com', 'media.licdn.com', 'fdlsmxwsjajabqjgumve.supabase.co'], // Allow images from these domains
   },
 }
 

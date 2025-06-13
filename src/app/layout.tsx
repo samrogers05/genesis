@@ -13,7 +13,10 @@ const inter = Inter({
 // This information is used for SEO and browser tab display
 export const metadata: Metadata = {
   title: 'Genesis',
-  description: 'AI-powered research funding platform',
+  description: 'Where Science Convenes',
+  icons: {
+    icon: '/favicon.svg',
+  },
 }
 
 // Root layout component that wraps all pages in the application

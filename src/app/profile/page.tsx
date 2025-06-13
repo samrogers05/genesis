@@ -32,13 +32,31 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 //   ...
 // };
 
+interface ProfileData {
+  id: string;
+  fullName: string | null;
+  avatarUrl: string | null;
+  researchProject: string | null;
+  keyQuestion: string | null;
+  about: string | null;
+  location: string | null;
+  organization: string | null;
+  labAffiliation: string | null;
+  email: string | null;
+  publications: number | null;
+  citations: number | null;
+  collaborations: number | null;
+  hot: boolean | null;
+  tags: string[];
+}
+
 export default function Profile() {
   const [loading, setLoading] = useState(true);
-  const [profileData, setProfileData] = useState<any>(null);
+  const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [filter, setFilter] = useState("");
   const [locationFilter, setLocationFilter] = useState("");
   const [search, setSearch] = useState("");
-  const [dailyBoosts, setDailyBoosts] = useState(3); // Keeping for now, but not tied to Supabase
+  const [dailySignalBoosts, setDailySignalBoosts] = useState(3); // Keeping for now, but not tied to Supabase
   const [boostedItems, setBoostedItems] = useState(new Set()); // Keeping for now, but not tied to Supabase
   const [isEditing, setIsEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -46,6 +64,7 @@ export default function Profile() {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClientComponentClient();
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     async function loadProfile() {
@@ -112,8 +131,8 @@ export default function Profile() {
     setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
 
-    if (!user) {
-      console.error('User not authenticated for update.');
+    if (!user || !profileData) {
+      console.error('User not authenticated or profile data missing.');
       setLoading(false);
       return;
     }
@@ -167,21 +186,6 @@ export default function Profile() {
         }
       }
 
-      // Reload the profile data to show the updated information
-      const { data: updatedProfile, error: reloadError } = await supabase
-        .from('Profile')
-        .select('*, profileTags(tagId, Tags(name))')
-        .eq('id', user.id)
-        .single();
-
-      if (!reloadError && updatedProfile) {
-        const transformedProfile = {
-          ...updatedProfile,
-          tags: updatedProfile.profileTags.map((pt: any) => pt.Tags.name),
-        };
-        setProfileData(transformedProfile);
-      }
-
       setIsEditing(false); // Exit edit mode on successful update
     } catch (error: any) {
       console.error('Error updating profile:', error);
@@ -192,26 +196,96 @@ export default function Profile() {
   };
 
   const handleAddTag = (tag: string) => {
+    if (!profileData) return;
+    
     if (profileData.tags.length < 5 && !profileData.tags.includes(tag)) {
-      setProfileData((prev: any) => ({
+      setProfileData(prev => prev ? {
         ...prev,
         tags: [...prev.tags, tag]
-      }));
+      } : null);
     }
   };
 
   const handleRemoveTag = (tagToRemove: string) => {
-    setProfileData((prev: any) => ({
+    if (!profileData) return;
+    
+    setProfileData(prev => prev ? {
       ...prev,
-      tags: prev.tags.filter((tag: string) => tag !== tagToRemove)
-    }));
+      tags: prev.tags.filter(tag => tag !== tagToRemove)
+    } : null);
   };
 
   const handleProfileUpdate = (field: string, value: string | number) => {
-    setProfileData((prev: any) => ({
+    if (!profileData) return;
+    
+    setProfileData(prev => prev ? {
       ...prev,
       [field]: value
-    }));
+    } : null);
+  };
+
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!profileData) {
+      alert('Profile data is missing. Please try again.');
+      return;
+    }
+
+    try {
+      setUploading(true);
+      
+      if (!event.target.files || event.target.files.length === 0) {
+        throw new Error('You must select an image to upload.');
+      }
+
+      const file = event.target.files[0];
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${profileData.id}-${Math.random()}.${fileExt}`;
+
+      console.log('Attempting to upload file:', {
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type,
+        filePath: filePath
+      });
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        console.error('Upload error details:', uploadError);
+        throw new Error(`Upload failed: ${uploadError.message}`);
+      }
+
+      // Get the public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      console.log('File uploaded successfully. Public URL:', publicUrl);
+
+      // Update the profile with the new avatar URL
+      const { error: updateError } = await supabase
+        .from('Profile')
+        .update({ avatarUrl: publicUrl })
+        .eq('id', profileData.id);
+
+      if (updateError) {
+        console.error('Profile update error:', updateError);
+        throw new Error(`Profile update failed: ${updateError.message}`);
+      }
+
+      // Update the local state
+      setProfileData(prev => prev ? {
+        ...prev,
+        avatarUrl: publicUrl
+      } : null);
+    } catch (error: any) {
+      console.error('Error uploading avatar:', error);
+      alert(`Error uploading avatar: ${error.message}`);
+    } finally {
+      setUploading(false);
+    }
   };
 
   if (loading) {
@@ -279,14 +353,29 @@ export default function Profile() {
             <div className="flex items-start gap-6 -mt-16">
               <div className="relative">
                 <div className="w-24 h-24 rounded-full bg-slate-200 border-4 border-white shadow-lg flex items-center justify-center overflow-hidden">
-                  <div className="text-slate-600 text-2xl font-semibold">
-                    {profileData.fullName?.split(' ').map((n: string) => n[0]).join('')}
-                  </div>
+                  {profileData.avatarUrl ? (
+                    <img
+                      src={profileData.avatarUrl || ''}
+                      alt={profileData.fullName || 'Profile picture'}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="text-slate-600 text-2xl font-semibold">
+                      {profileData.fullName?.split(' ').map((n: string) => n[0]).join('')}
+                    </div>
+                  )}
                 </div>
                 {isEditing && (
-                  <button className="absolute -bottom-2 -right-2 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 transition-colors duration-200">
+                  <label className="absolute -bottom-2 -right-2 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 transition-colors duration-200 cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarUpload}
+                      className="hidden"
+                      disabled={uploading}
+                    />
                     <Camera className="w-4 h-4" />
-                  </button>
+                  </label>
                 )}
               </div>
               
@@ -537,21 +626,32 @@ export default function Profile() {
           className={`flex flex-col items-center transition-colors duration-200 ${pathname === "/feed" ? "text-blue-600" : "text-black hover:text-gray-600"}`}
         >
           <Home className="w-5 h-5" />
-          <span className="text-xs mt-1">Feed</span>
+          <span className="text-sm mt-1">Feed</span>
         </Link>
         <Link
           href="/"
           className={`flex flex-col items-center transition-colors duration-200 ${pathname === "/" ? "text-blue-600" : "text-black hover:text-gray-600"}`}
         >
           <Search className="w-5 h-5" />
-          <span className="text-xs mt-1">Explore</span>
+          <span className="text-sm mt-1">Explore</span>
+        </Link>
+        <Link
+          href="/create-project"
+          className="flex flex-col items-center transition-colors duration-200 text-emerald-600 hover:text-emerald-700"
+        >
+          <div className="w-7 h-7 bg-emerald-600 rounded-full flex items-center justify-center -mt-2 shadow-lg hover:bg-emerald-700 transition-colors duration-200">
+            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+          </div>
+          <span className="text-sm mt-1">Create</span>
         </Link>
         <Link
           href="/profile"
           className={`flex flex-col items-center transition-colors duration-200 ${pathname === "/profile" ? "text-blue-600" : "text-black hover:text-gray-600"}`}
         >
           <User className="w-5 h-5" />
-          <span className="text-xs mt-1">Profile</span>
+          <span className="text-sm mt-1">Profile</span>
         </Link>
       </nav>
     </div>

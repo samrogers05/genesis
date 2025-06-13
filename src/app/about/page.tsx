@@ -4,6 +4,7 @@
 import { Home as HomeIcon, Search, User } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { supabase } from "@/lib/supabase";
 
 // About component - displays information about Genesis and its founders
 export default function About() {
