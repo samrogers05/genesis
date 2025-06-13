@@ -142,7 +142,7 @@ export default function Profile() {
           signalBoosts,
           creator:Profile(id, fullName, avatarUrl)
         `)
-        .eq('createdBy', user.id)
+        .eq('creatorid', user.id)
         .order('createdAt', { ascending: false });
 
       if (projectsError) {
