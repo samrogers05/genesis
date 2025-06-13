@@ -155,52 +155,56 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* User ID Card */}
             <div className="flex items-center gap-4 p-4 border border-slate-200 rounded-lg shadow-sm bg-emerald-50">
-              <div className="w-14 h-14 rounded-full bg-slate-200 flex items-center justify-center overflow-hidden flex-shrink-0">
-                {project.creator?.avatarUrl ? (
-                  <Image
-                    src={project.creatorUrl}
-                    alt={project.creatorName || 'Creator'}
-                    width={56}
-                    height={56}
-                    objectFit="cover"
-                  />
-                ) : (
-                  <div className="text-slate-600 text-xl font-semibold">
-                    {(project.creatorName || 'C').split(' ').map((n: string) => n[0]).join('')}
-                  </div>
-                )}
-              </div>
-              <div>
-                <h3 className="text-lg font-medium text-slate-900">{project.creatorName || 'Anonymous'}</h3>
-                <p className="text-sm text-emerald-700 font-semibold">Creator</p>
-                {project.creatorEmail && <p className="text-sm text-slate-500">{project.creatorEmail}</p>}
-              </div>
+              <Link href={`/profile/${project.creatorid}`} className="flex items-center gap-4 w-full">
+                <div className="w-14 h-14 rounded-full bg-slate-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+                  {project.creator?.avatarUrl ? (
+                    <Image
+                      src={project.creatorUrl}
+                      alt={project.creatorName || 'Creator'}
+                      width={56}
+                      height={56}
+                      objectFit="cover"
+                    />
+                  ) : (
+                    <div className="text-slate-600 text-xl font-semibold">
+                      {(project.creatorName || 'C').split(' ').map((n: string) => n[0]).join('')}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <h3 className="text-lg font-medium text-slate-900">{project.creatorName || 'Anonymous'}</h3>
+                  <p className="text-sm text-emerald-700 font-semibold">Creator</p>
+                  {project.creatorEmail && <p className="text-sm text-slate-500">{project.creatorEmail}</p>}
+                </div>
+              </Link>
             </div>
 
             {/* Collaborators Cards */}
             {project.Collaborators && project.Collaborators.length > 0 ? (
               project.Collaborators.map((collaborator: any) => (
                 <div key={collaborator.profile[0]?.id} className="flex items-center gap-4 p-4 border border-slate-200 rounded-lg shadow-sm bg-white">
-                  <div className="w-14 h-14 rounded-full bg-slate-200 flex items-center justify-center overflow-hidden flex-shrink-0">
-                    {collaborator.profile[0]?.avatarUrl ? (
-                      <Image
-                        src={collaborator.profile[0].avatarUrl}
-                        alt={collaborator.profile[0].fullName || 'Collaborator'}
-                        width={56}
-                        height={56}
-                        objectFit="cover"
-                      />
-                    ) : (
-                      <div className="text-slate-600 text-xl font-semibold">
-                        {(collaborator.profile[0]?.fullName || 'C').split(' ').map((n: string) => n[0]).join('')}
-                      </div>
-                    )}
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-medium text-slate-900">{collaborator.profile[0]?.fullName || 'Collaborator'}</h3>
-                    <p className="text-sm text-slate-500">Collaborator</p>
-                    {collaborator.profile[0]?.email && <p className="text-sm text-slate-500">{collaborator.profile[0].email}</p>}
-                  </div>
+                  <Link href={`/profile/${collaborator.profile[0]?.id}`} className="flex items-center gap-4 w-full">
+                    <div className="w-14 h-14 rounded-full bg-slate-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+                      {collaborator.profile[0]?.avatarUrl ? (
+                        <Image
+                          src={collaborator.profile[0].avatarUrl}
+                          alt={collaborator.profile[0].fullName || 'Collaborator'}
+                          width={56}
+                          height={56}
+                          objectFit="cover"
+                        />
+                      ) : (
+                        <div className="text-slate-600 text-xl font-semibold">
+                          {(collaborator.profile[0]?.fullName || 'C').split(' ').map((n: string) => n[0]).join('')}
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-medium text-slate-900">{collaborator.profile[0]?.fullName || 'Collaborator'}</h3>
+                      <p className="text-sm text-slate-500">Collaborator</p>
+                      {collaborator.profile[0]?.email && <p className="text-sm text-slate-500">{collaborator.profile[0].email}</p>}
+                    </div>
+                  </Link>
                 </div>
               ))
             ) : (

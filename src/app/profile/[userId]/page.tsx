@@ -1,36 +1,12 @@
 'use client';
 
-// Import necessary dependencies for the profile page
 import { useState, useEffect } from "react";
 import { Home, Search, User, MapPin, Beaker, Target, MessageSquare } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-
-// Removed mock data for research labs as we are now using Supabase
-// const mockLabs = [
-//   ...
-// ];
-
-// Removed mock data for user updates
-// const userUpdates = [
-//   ...
-// ];
-
-// Removed mock data for category trends
-// const categoryTrends = [
-//   ...
-// ];
-
-// Removed mock data for recommended labs
-// const recommendedLabs = [
-//   ...
-// ];
-
-// Removed sample user profile data as we are now fetching from Supabase
-// const userProfile = {
-//   ...
-// };
+import { useAuth } from '@/hooks/useAuth';
+import { useRouter } from 'next/navigation';
 
 interface ProfileData {
   id: string;
@@ -56,6 +32,8 @@ export default function PublicProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const supabase = createClientComponentClient();
   const { userId } = useParams();
+  const { user } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
     async function loadProfile() {
@@ -109,6 +87,11 @@ export default function PublicProfilePage() {
     loadProfile();
   }, [userId, supabase]);
 
+  const handleCollaborate = () => {
+    if (!userId) return;
+    router.push(`/chat/${userId}`);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -146,6 +129,15 @@ export default function PublicProfilePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <h1 className="text-xl font-semibold text-slate-900">Profile</h1>
+            {user && user.id !== userId && (
+              <button
+                onClick={handleCollaborate}
+                className="px-6 py-2 bg-emerald-600 text-white rounded-lg font-semibold shadow-md hover:bg-emerald-700 transition-colors duration-200 flex items-center gap-2"
+              >
+                <MessageSquare className="w-5 h-5" />
+                Collaborate
+              </button>
+            )}
           </div>
         </div>
       </header>

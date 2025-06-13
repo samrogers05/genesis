@@ -20,6 +20,7 @@ async function getProjects(tagFilter: string, locationFilter: string, searchTerm
       .from('Project')
       .select(`
         *,
+        creator:Profile(id, fullName, avatarUrl),
         projectTags ( 
           tagId,
           Tags ( 
@@ -424,11 +425,13 @@ export default function Home() {
                   <button className="flex-1 px-3 py-2 text-sm bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-all duration-200 transform hover:scale-105 active:scale-95">
                     View Project
                   </button>
-                  <button className="px-3 py-2 text-sm bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-all duration-200 transform hover:scale-105 active:scale-95">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                  </button>
+                  {user && user.id !== lab.creator?.id && (
+                    <Link href={`/chat/${lab.creator?.id}`}>
+                      <button className="px-3 py-2 text-sm bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-all duration-200 transform hover:scale-105 active:scale-95">
+                        Collaborate
+                      </button>
+                    </Link>
+                  )}
                 </div>
               </div>
             </div>

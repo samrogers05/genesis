@@ -605,12 +605,6 @@ export default function Profile() {
             
             <div className="mt-6 pt-6 border-t border-slate-100">
               <div className="flex gap-4">
-                <button className="px-6 py-3 bg-emerald-600 text-white text-sm sans uppercase tracking-wider hover:bg-emerald-700 transition-all duration-200">
-                  Send Message
-                </button>
-                <button className="px-6 py-3 bg-blue-600 text-white text-sm sans uppercase tracking-wider hover:bg-blue-700 transition-all duration-200">
-                  Propose Collaboration
-                </button>
                 <button className="px-6 py-3 border border-slate-300 text-slate-700 text-sm sans uppercase tracking-wider hover:border-slate-400 hover:bg-slate-50 transition-all duration-200">
                   View Publications
                 </button>

@@ -12,6 +12,7 @@ interface Project {
   title: string;
   description: string;
   createdAt: string;
+  signalBoosts?: number;
   creator: {
     id: string;
     fullName: string;
@@ -39,7 +40,7 @@ interface FeedItem {
 export default function Feed() {
   const [loading, setLoading] = useState(true);
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
-  const [dailySignalBoosts, setDailySignalBoosts] = useState(3);
+  const [dailySignalBoosts, setDailySignalBoosts] = useState(5);
   const [boostedItems, setBoostedItems] = useState(new Set<string>());
   const pathname = usePathname();
   const { user } = useAuth();
@@ -51,6 +52,32 @@ export default function Feed() {
     async function loadFeed() {
       setLoading(true);
       try {
+        // Get user's daily signal boosts
+        const { data: profile, error: profileError } = await supabase
+          .from('Profile')
+          .select('dailySignalBoosts')
+          .eq('id', user?.id)
+          .single();
+
+        if (profileError) throw profileError;
+        setDailySignalBoosts(profile.dailySignalBoosts);
+
+        // Get user's boosted items
+        const { data: boosts, error: boostsError } = await supabase
+          .from('SignalBoosts')
+          .select('projectId')
+          .eq('userId', user?.id);
+
+        if (boostsError) throw boostsError;
+        
+        // Create a Set of boosted item IDs, considering both new_project and trending item IDs
+        const initialBoostedItems = new Set<string>();
+        boosts.forEach(boost => {
+          initialBoostedItems.add(boost.projectId); // For new_project type IDs
+          initialBoostedItems.add(`trending-${boost.projectId}`); // For trending type IDs
+        });
+        setBoostedItems(initialBoostedItems);
+
         // Fetch recent projects
         const { data: projects, error: projectsError } = await supabase
           .from('Project')
@@ -71,7 +98,9 @@ export default function Feed() {
           title: `New Project: ${project.title}`,
           detail: project.description,
           time: new Date(project.createdAt).toLocaleString(),
-          projectId: project.id
+          projectId: project.id,
+          signalBoosts: project.signalBoosts || 0,
+          boosted: initialBoostedItems.has(project.id)
         }));
 
         // Fetch trending projects (based on signalBoosts)
@@ -95,7 +124,7 @@ export default function Feed() {
           detail: project.description,
           time: new Date(project.createdAt).toLocaleString(),
           signalBoosts: project.signalBoosts || 0,
-          boosted: false,
+          boosted: initialBoostedItems.has(`trending-${project.id}`),
           projectId: project.id
         }));
 
@@ -120,7 +149,9 @@ export default function Feed() {
           title: `New Project: ${newProject.title}`,
           detail: newProject.description,
           time: new Date(newProject.createdAt).toLocaleString(),
-          projectId: newProject.id
+          projectId: newProject.id,
+          signalBoosts: newProject.signalBoosts || 0,
+          boosted: false
         }, ...prev]);
       })
       .subscribe();
@@ -131,28 +162,50 @@ export default function Feed() {
   }, [user, supabase]);
 
   const handleSignalBoost = async (itemId: string) => {
-    if (dailySignalBoosts > 0 && !boostedItems.has(itemId)) {
-      try {
-        const projectId = feedItems.find(item => item.id === itemId)?.projectId;
-        if (!projectId) return;
+    if (!user) return;
+    
+    const projectId = feedItems.find(item => item.id === itemId)?.projectId;
+    if (!projectId) return;
 
-        const { error } = await supabase
-          .from('Project')
-          .update({ signalBoosts: supabase.rpc('increment_signalBoosts') })
-          .eq('id', projectId);
+    // Optimistically update UI
+    setDailySignalBoosts(prev => prev - 1);
+    setBoostedItems(prev => new Set([...prev, itemId]));
+    setFeedItems(prev => prev.map(item => 
+      item.projectId === projectId 
+        ? { ...item, signalBoosts: (item.signalBoosts || 0) + 1, boosted: true }
+        : item
+    ));
 
-        if (error) throw error;
+    try {
+      const { data, error } = await supabase.rpc('handle_signal_boost', {
+        user_id: user.id,
+        project_id: projectId
+      });
 
-        setDailySignalBoosts(prev => prev - 1);
-        setBoostedItems(prev => new Set([...prev, itemId]));
+      console.log('Supabase RPC response - data:', data);
+      console.log('Supabase RPC response - error:', error);
+
+      if (error || !data) {
+        // Revert UI if there's an error or boost was not successful (e.g., no boosts left, already boosted)
+        setDailySignalBoosts(prev => prev + 1);
+        setBoostedItems(prev => new Set([...Array.from(prev)].filter(id => id !== itemId)));
         setFeedItems(prev => prev.map(item => 
-          item.id === itemId 
-            ? { ...item, signalBoosts: (item.signalBoosts || 0) + 1, boosted: true }
+          item.projectId === projectId 
+            ? { ...item, signalBoosts: (item.signalBoosts || 0) - 1, boosted: false }
             : item
         ));
-      } catch (error) {
-        console.error('Error boosting item:', error);
+        console.error('Error boosting item or boost not allowed:', error);
       }
+    } catch (error) {
+      // Revert UI for unexpected errors
+      setDailySignalBoosts(prev => prev + 1);
+      setBoostedItems(prev => new Set([...Array.from(prev)].filter(id => id !== itemId)));
+      setFeedItems(prev => prev.map(item => 
+        item.projectId === projectId 
+          ? { ...item, signalBoosts: (item.signalBoosts || 0) - 1, boosted: false }
+          : item
+      ));
+      console.error('Unexpected error boosting item:', error);
     }
   };
 
@@ -189,7 +242,9 @@ export default function Feed() {
           <div
             key={item.id}
             className={`p-4 rounded-lg border ${
-              item.type === 'trending' 
+              item.boosted
+                ? 'bg-emerald-50 border-emerald-400'
+                : item.type === 'trending' 
                 ? 'border-l-4 border-orange-400 bg-orange-50 hover:bg-orange-100' 
                 : 'border-gray-200 bg-white hover:border-blue-500 hover:shadow-md'
             } transition duration-200`}
@@ -214,15 +269,9 @@ export default function Feed() {
                 <button
                   onClick={() => handleSignalBoost(item.id)}
                   disabled={dailySignalBoosts === 0 || boostedItems.has(item.id)}
-                  className={`ml-3 px-3 py-1 text-xs rounded transition-all duration-200 ${
-                    boostedItems.has(item.id)
-                      ? 'bg-green-500 text-white cursor-not-allowed'
-                      : dailySignalBoosts === 0
-                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                      : 'bg-orange-500 text-white hover:bg-orange-600 active:scale-95'
-                  }`}
+                  className={`ml-3 px-3 py-1 text-xs rounded transition-all duration-200 ${item.boosted ? 'bg-green-500 text-white cursor-not-allowed' : (dailySignalBoosts === 0 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-orange-500 text-white hover:bg-orange-600 active:scale-95')}`}
                 >
-                  {boostedItems.has(item.id) ? '✓ Boosted' : 'Signal Boost'}
+                  {item.boosted ? '✓ Boosted' : 'Signal Boost'}
                 </button>
               )}
             </div>
