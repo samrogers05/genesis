@@ -153,10 +153,10 @@ export default function Feed() {
 
         // Transform projects into feed items
         const items: FeedItem[] = projects.map(project => {
-          console.log('Mapping project:', project.id, 'Raw project.creator:', project.creator);
-          const creatorData = project.creator;
-          console.log('CreatorData after extraction for project:', creatorData);
-          const newFeedItem = {
+          const creatorData = (Array.isArray(project.creator) && project.creator.length > 0)
+            ? (project.creator[0] as unknown as { id: string; fullName: string | null; avatarUrl: string | null; })
+            : null;
+          return {
             id: project.id,
             type: 'new_project' as const,
             name: project.name,
@@ -171,7 +171,6 @@ export default function Feed() {
               avatarUrl: creatorData.avatarUrl
             } : undefined
           };
-          return newFeedItem;
         });
 
         // Fetch trending projects (based on signalBoosts)
@@ -194,8 +193,10 @@ export default function Feed() {
 
         // Add trending items
         const trendingItems: FeedItem[] = trendingProjects.map(project => {
-          const creatorData = project.creator;
-          const newFeedItem = {
+          const creatorData = (Array.isArray(project.creator) && project.creator.length > 0)
+            ? (project.creator[0] as unknown as { id: string; fullName: string | null; avatarUrl: string | null; })
+            : null;
+          return {
             id: `trending-${project.id}`,
             type: 'trending' as const,
             name: project.name,
@@ -210,7 +211,6 @@ export default function Feed() {
               avatarUrl: creatorData.avatarUrl
             } : undefined
           };
-          return newFeedItem;
         });
 
         // Fetch recent changes (updates)
@@ -227,10 +227,12 @@ export default function Feed() {
         if (changesError) throw changesError;
 
         const changeItems: FeedItem[] = changes.map(change => {
-          console.log('Mapping change:', change.id, 'Raw change.Project:', change.Project);
           const projectData = Array.isArray(change.Project) && change.Project.length > 0 ? change.Project[0] : null;
-          const creatorData = projectData;
-          const newFeedItem = {
+          const creatorData = 
+            (projectData && Array.isArray(projectData.creator) && projectData.creator.length > 0)
+              ? (projectData.creator[0] as unknown as { id: string; fullName: string | null; avatarUrl: string | null; })
+              : null;
+          return {
             id: `change-${change.id}`,
             type: 'project_update' as const,
             name: `Update on ${projectData?.name || 'a project'}`,
@@ -243,9 +245,7 @@ export default function Feed() {
               avatarUrl: creatorData.avatarUrl,
             } : undefined,
           };
-          return newFeedItem;
         });
-
 
         // Fetch recent publications
         const { data: publications, error: publicationsError } = await supabase
@@ -263,12 +263,12 @@ export default function Feed() {
         if (publicationsError) throw publicationsError;
 
         const publicationItems: FeedItem[] = publications.map(publication => {
-          console.log('Mapping publication:', publication.id, 'Raw publication.profile:', publication.profile);
-          console.log('Raw publication.Project:', publication.Project);
           const projectData = Array.isArray(publication.Project) && publication.Project.length > 0 ? publication.Project[0] : null;
-          const authorData = publication.profile;
-          console.log('AuthorData after extraction for publication:', authorData);
-          const newFeedItem = {
+          const authorData = 
+            (Array.isArray(publication.profile) && publication.profile.length > 0)
+              ? (publication.profile[0] as unknown as { id: string; fullName: string | null; avatarUrl: string | null; })
+              : null;
+          return {
             id: `publication-${publication.id}`,
             type: 'new_publication' as const,
             name: `New Publication: ${publication.title}`,
@@ -281,11 +281,7 @@ export default function Feed() {
               avatarUrl: authorData.avatarUrl,
             } : undefined,
           };
-          console.log('New FeedItem being constructed for publication:', newFeedItem);
-          return newFeedItem;
         });
-
-        console.log('Transformed publication items:', publicationItems);
 
         // Combine all latest updates and sort by time
         const latestUpdates = [...items, ...changeItems, ...publicationItems].sort((a, b) => {
@@ -321,7 +317,12 @@ export default function Feed() {
           time: new Date(newProject.createdAt).toLocaleString(),
           projectId: newProject.id,
           signalBoosts: newProject.signalBoosts || 0,
-          boosted: false
+          boosted: false,
+          creator: newProject.creator && newProject.creator.length > 0 ? {
+            id: newProject.creator[0].id,
+            fullName: newProject.creator[0].fullName,
+            avatarUrl: newProject.creator[0].avatarUrl,
+          } : undefined,
         }, ...prev]);
       })
       .subscribe();
@@ -380,14 +381,14 @@ export default function Feed() {
   };
 
   if (loading) {
-  return (
-    <div className="flex flex-col min-h-screen bg-white font-sans text-gray-900">
-      <header className="flex items-center justify-between px-4 py-3 border-b border-black bg-white uppercase tracking-wide">
-        <div className="flex items-center gap-3">
-          <h1 className="text-md font-bold">Genesis</h1>
-          <span className="text-xs text-gray-600 font-medium tracking-wider">Where Breakthroughs Begin</span>
-        </div>
-      </header>
+    return (
+      <div className="flex flex-col min-h-screen bg-white font-sans text-gray-900">
+        <header className="flex items-center justify-between px-4 py-3 border-b border-black bg-white uppercase tracking-wide">
+          <div className="flex items-center gap-3">
+            <h1 className="text-md font-bold">Genesis</h1>
+            <span className="text-xs text-gray-600 font-medium tracking-wider">Where Breakthroughs Begin</span>
+          </div>
+        </header>
         <div className="flex-1 flex items-center justify-center">
           <div className="text-lg">Loading feed...</div>
         </div>
@@ -450,7 +451,7 @@ export default function Feed() {
                       <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-full bg-slate-200"></div>
                         <span className="text-sm font-medium text-slate-700">{item.creator?.fullName || 'Anonymous'}</span>
-            </div>
+                      </div>
                       <button
                         onClick={(e) => {
                           e.preventDefault();
@@ -479,8 +480,9 @@ export default function Feed() {
           <h2 className="text-2xl font-bold text-slate-900 mb-6">Latest Updates</h2>
           <div className="space-y-6">
             {feedItems
-              .filter(item => item.type === 'new_project')
-              .slice(0, 5)
+              .filter(item => item.type === 'new_project' || item.type === 'project_update' || item.type === 'new_publication')
+              .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
+              .slice(0, 5) // Display top 5 latest updates
               .map((item) => (
                 <div
                   key={item.id}
@@ -507,125 +509,39 @@ export default function Feed() {
                         <div>
                           <h3 className="font-medium text-slate-900">{item.creator?.fullName || 'Anonymous'}</h3>
                           <p className="text-sm text-slate-500">{new Date(item.time).toLocaleDateString()}</p>
+                        </div>
+                      </div>
+                      {item.type === 'new_project' && (
+                        <button
+                          onClick={() => handleSignalBoost(item.id)}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                            item.boosted
+                              ? 'bg-emerald-100 text-emerald-700'
+                              : 'bg-slate-100 text-slate-700 hover:bg-emerald-100 hover:text-emerald-700'
+                          }`}
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                          </svg>
+                          {item.signalBoosts}
+                        </button>
+                      )}
+                      {(item.type === 'project_update' || item.type === 'new_publication') && item.projectId && (
+                        <Link
+                          href={`/project/${item.projectId}`}
+                          className="text-sm font-medium text-emerald-600 hover:text-emerald-700"
+                        >
+                          View Project
+                        </Link>
+                      )}
                     </div>
-                  </div>
-                  <button
-                        onClick={() => handleSignalBoost(item.id)}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                          item.boosted
-                            ? 'bg-emerald-100 text-emerald-700'
-                            : 'bg-slate-100 text-slate-700 hover:bg-emerald-100 hover:text-emerald-700'
-                        }`}
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                        </svg>
-                        {item.signalBoosts}
-                  </button>
-                </div>
-                    <Link href={`/project/${item.projectId}`} className="block">
-                      <h4 className="text-lg font-semibold text-slate-900 mb-2 hover:text-emerald-600 transition-colors">
-                        {item.name.replace('New Project: ', '')}
-                      </h4>
-                      <p className="text-slate-600">{item.detail}</p>
-                    </Link>
+                    <h4 className="text-lg font-semibold text-slate-900 mb-2">
+                      {item.name.replace('New Project: ', '').replace('Update on ', '').replace('New Publication: ', '')}
+                    </h4>
+                    <p className="text-slate-600">{item.detail}</p>
                   </div>
                 </div>
               ))}
-
-              {feedItems
-                .filter(item => item.type === 'project_update')
-                .map((item) => (
-                  <div
-                    key={item.id}
-                    className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden"
-                  >
-                    <div className="p-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-slate-200 overflow-hidden">
-                            {item.creator?.avatarUrl ? (
-                              <Image
-                                src={item.creator.avatarUrl}
-                                alt={item.creator.fullName || 'Creator'}
-                                width={40}
-                                height={40}
-                                className="rounded-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center text-slate-600 text-base">
-                                {item.creator?.fullName?.charAt(0) || '?'}
-                              </div>
-                            )}
-                          </div>
-                          <div>
-                            <h3 className="font-medium text-slate-900">{item.creator?.fullName || 'Anonymous'}</h3>
-                            <p className="text-sm text-slate-500">{new Date(item.time).toLocaleDateString()}</p>
-                          </div>
-                        </div>
-                        {item.projectId && (
-                          <Link
-                            href={`/project/${item.projectId}`}
-                            className="text-sm font-medium text-emerald-600 hover:text-emerald-700"
-                          >
-                            View Project
-                          </Link>
-                        )}
-                      </div>
-                      <h4 className="text-lg font-semibold text-slate-900 mb-2">
-                        {item.name}
-                      </h4>
-                      <p className="text-slate-600">{item.detail}</p>
-                </div>
-              </div>
-            ))}
-
-              {feedItems
-                .filter(item => item.type === 'new_publication')
-                .map((item) => (
-                  <div
-                    key={item.id}
-                    className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden"
-                  >
-                    <div className="p-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-slate-200 overflow-hidden">
-                            {item.creator?.avatarUrl ? (
-                              <Image
-                                src={item.creator.avatarUrl}
-                                alt={item.creator.fullName || 'Author'}
-                                width={40}
-                                height={40}
-                                className="rounded-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center text-slate-600 text-base">
-                                {item.creator?.fullName?.charAt(0) || '?'}
-                              </div>
-                            )}
-                          </div>
-                          <div>
-                            <h3 className="font-medium text-slate-900">{item.creator?.fullName || 'Anonymous'}</h3>
-                            <p className="text-sm text-slate-500">{new Date(item.time).toLocaleDateString()}</p>
-          </div>
-        </div>
-                        {item.projectId && (
-                          <Link
-                            href={`/project/${item.projectId}`}
-                            className="text-sm font-medium text-emerald-600 hover:text-emerald-700"
-                          >
-                            View Project
-                          </Link>
-                        )}
-                      </div>
-                      <h4 className="text-lg font-semibold text-slate-900 mb-2">
-                        {item.name}
-                      </h4>
-                      <p className="text-slate-600">{item.detail}</p>
-                    </div>
-              </div>
-            ))}
           </div>
         </section>
 
@@ -635,7 +551,7 @@ export default function Feed() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {feedItems
               .filter(item => item.type === 'trending')
-              .slice(3)
+              .slice(0, 3) // Display top 3 trending projects in the featured section already
               .map((item) => (
                 <Link
                   key={item.id}
@@ -676,8 +592,8 @@ export default function Feed() {
                         </svg>
                         {item.signalBoosts}
                       </button>
-        </div>
-      </div>
+                    </div>
+                  </div>
                 </Link>
               ))}
           </div>
@@ -721,4 +637,4 @@ export default function Feed() {
       </nav>
     </div>
   );
-} 
+}
